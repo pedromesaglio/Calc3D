@@ -55,23 +55,17 @@
     .tab-inactive { background: transparent; color: #94a3b8; }
     .tab-inactive:hover { color: #6366f1; }
 
-    /* Decorative glow blobs */
-    .blob {
-      position: fixed; border-radius: 9999px;
-      filter: blur(80px); pointer-events: none; z-index: 0;
+    /* Subtle grid overlay */
+    body::before {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        repeating-linear-gradient(0deg,  rgba(255,255,255,.04) 0, rgba(255,255,255,.04) 1px, transparent 1px, transparent 48px),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.04) 0, rgba(255,255,255,.04) 1px, transparent 1px, transparent 48px);
     }
-    .blob-1 { width: 420px; height: 420px; background: rgb(99 102 241/.25);  top: -120px; left: -100px; }
-    .blob-2 { width: 360px; height: 360px; background: rgb(139 92 246/.2);   bottom: -80px; right: -80px; }
-    .blob-3 { width: 280px; height: 280px; background: rgb(59 130 246/.15);  top: 40%;  left: 55%; }
   </style>
 </head>
 <body class="min-h-screen flex items-center justify-center px-4 py-10"
       style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4c1d95 100%);">
-
-  <!-- Decorative blobs -->
-  <div class="blob blob-1"></div>
-  <div class="blob blob-2"></div>
-  <div class="blob blob-3"></div>
 
   <!-- Card -->
   <div class="relative z-10 w-full max-w-sm">
