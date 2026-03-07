@@ -9,8 +9,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Aplicar tema antes de renderizar para evitar flash -->
+  <script>
+    (function () {
+      const t = localStorage.getItem('theme');
+      const dark = t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      if (dark) document.documentElement.classList.add('dark');
+    })();
+  </script>
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           fontFamily: { sans: ['Inter', 'sans-serif'] },
@@ -22,11 +31,35 @@
     }
   </script>
   <style>
-    body { font-family: 'Inter', sans-serif; }
+    /* ── Variables de tema ── */
+    :root {
+      --bg-page:   #f8fafc;
+      --bg-card:   #ffffff;
+      --bg-input:  #f8fafc;
+      --bg-muted:  #f1f5f9;
+      --bg-hover:  #f8fafc;
+      --border:    #e2e8f0;
+      --text:      #1e293b;
+      --text-muted:#64748b;
+      --text-faint:#94a3b8;
+    }
+    html.dark {
+      --bg-page:   #0f172a;
+      --bg-card:   #1e293b;
+      --bg-input:  #0f172a;
+      --bg-muted:  #243045;
+      --bg-hover:  #1e2d42;
+      --border:    #334155;
+      --text:      #e2e8f0;
+      --text-muted:#94a3b8;
+      --text-faint:#475569;
+    }
+
+    body { font-family: 'Inter', sans-serif; background: var(--bg-page); color: var(--text); }
 
     .card {
-      background: #fff; border-radius: 1rem;
-      border: 1px solid #e2e8f0; padding: 1.5rem;
+      background: var(--bg-card); border-radius: 1rem;
+      border: 1px solid var(--border); padding: 1.5rem;
       box-shadow: 0 1px 3px 0 rgb(0 0 0/.04), 0 1px 2px -1px rgb(0 0 0/.04);
     }
 
@@ -34,21 +67,22 @@
     .input-wrap { position: relative; }
     .input-icon {
       position: absolute; left: .75rem; top: 50%; transform: translateY(-50%);
-      color: #94a3b8; pointer-events: none; width: 1rem; height: 1rem;
+      color: var(--text-faint); pointer-events: none; width: 1rem; height: 1rem;
     }
     .input, .select {
-      width: 100%; border-radius: .5rem; border: 1.5px solid #e2e8f0;
+      width: 100%; border-radius: .5rem; border: 1.5px solid var(--border);
       padding: .5rem .75rem .5rem 2.25rem;
-      font-size: .875rem; color: #1e293b; background: #f8fafc;
+      font-size: .875rem; color: var(--text); background: var(--bg-input);
       transition: border-color .15s, box-shadow .15s, background .15s; outline: none;
       font-family: 'Inter', sans-serif;
     }
     .input:focus, .select:focus {
-      border-color: #6366f1; box-shadow: 0 0 0 3px rgb(99 102 241/.12); background: #fff;
+      border-color: #6366f1; box-shadow: 0 0 0 3px rgb(99 102 241/.12); background: var(--bg-card);
     }
-    .input::placeholder { color: #cbd5e1; }
-    .input:read-only { background: #f1f5f9; color: #64748b; cursor: not-allowed; }
+    .input::placeholder { color: var(--border); }
+    .input:read-only { background: var(--bg-muted); color: var(--text-muted); cursor: not-allowed; }
     .select { appearance: none; padding-right: 2rem; cursor: pointer; }
+    .select option { background: var(--bg-card); color: var(--text); }
 
     /* ── Section badges ── */
     .section-badge {
@@ -57,26 +91,24 @@
       color: #6366f1; background: #eef2ff; border-radius: 9999px;
       padding: .25rem .75rem; margin-bottom: .75rem;
     }
+    html.dark .section-badge { background: #1e1b4b; color: #818cf8; }
+
     .field-label {
       display: block; font-size: .7rem; font-weight: 700;
       letter-spacing: .05em; text-transform: uppercase;
-      color: #94a3b8; margin-bottom: .375rem;
+      color: var(--text-faint); margin-bottom: .375rem;
     }
-    .form-divider { height: 1px; background: #f1f5f9; }
+    .form-divider { height: 1px; background: var(--bg-muted); }
 
     /* ── Stat cards ── */
     .stat {
       border-radius: .875rem; padding: 1rem 1.25rem;
-      background: #fff; border: 1.5px solid #e2e8f0;
+      background: var(--bg-card); border: 1.5px solid var(--border);
       display: flex; flex-direction: column; gap: .2rem;
-      position: relative; overflow: hidden;
-      transition: box-shadow .15s;
+      position: relative; overflow: hidden; transition: box-shadow .15s;
     }
     .stat:hover { box-shadow: 0 4px 12px rgb(0 0 0/.07); }
-    .stat::before {
-      content: ''; position: absolute; top: 0; left: 0;
-      width: 3px; height: 100%; border-radius: 1px;
-    }
+    .stat::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; border-radius: 1px; }
     .stat-gray::before   { background: #94a3b8; }
     .stat-violet::before { background: #8b5cf6; }
     .stat-indigo::before { background: #6366f1; }
@@ -84,106 +116,93 @@
     .stat-amber::before  { background: #f59e0b; }
     .stat-label { font-size: .68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
     .stat-value { font-size: 1.2rem; font-weight: 700; letter-spacing: -.02em; }
-    .stat-icon {
-      position: absolute; right: .875rem; top: .875rem;
-      width: 1.75rem; height: 1.75rem; border-radius: .5rem;
-      display: flex; align-items: center; justify-content: center;
-    }
+    .stat-icon { position: absolute; right: .875rem; top: .875rem; width: 1.75rem; height: 1.75rem; border-radius: .5rem; display: flex; align-items: center; justify-content: center; }
 
     /* ── Pills ── */
     .pill {
       display: inline-flex; align-items: center; justify-content: center;
-      padding: .375rem 1rem; border-radius: 9999px;
-      font-size: .8125rem; font-weight: 700;
-      border: 1.5px solid #e2e8f0; cursor: pointer;
-      transition: all .15s; background: #fff; color: #64748b; user-select: none;
+      padding: .375rem 1rem; border-radius: 9999px; font-size: .8125rem; font-weight: 700;
+      border: 1.5px solid var(--border); cursor: pointer;
+      transition: all .15s; background: var(--bg-card); color: var(--text-muted); user-select: none;
     }
     .pill:hover { border-color: #6366f1; color: #6366f1; background: #eef2ff; }
-    .pill.active {
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      border-color: transparent; color: #fff;
-      box-shadow: 0 2px 8px rgb(99 102 241/.35);
-    }
+    html.dark .pill:hover { background: #1e1b4b; }
+    .pill.active { background: linear-gradient(135deg,#6366f1,#8b5cf6); border-color: transparent; color: #fff; box-shadow: 0 2px 8px rgb(99 102 241/.35); }
 
     /* ── Buttons ── */
     .btn-primary {
-      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      background: linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);
       color: #fff; font-weight: 700; font-size: .875rem;
       padding: .6rem 1.5rem; border-radius: .75rem; border: none; cursor: pointer;
       box-shadow: 0 2px 10px rgb(99 102 241/.35);
       transition: transform .15s, box-shadow .15s; letter-spacing: -.01em;
       font-family: 'Inter', sans-serif; display: inline-flex; align-items: center; gap: .5rem;
     }
-    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgb(99 102 241/.45); }
+    .btn-primary:hover  { transform: translateY(-1px); box-shadow: 0 4px 16px rgb(99 102 241/.45); }
     .btn-primary:active { transform: translateY(0); }
 
-    .btn-sm {
-      font-size: .75rem; font-weight: 600; padding: .35rem .9rem;
-      border-radius: .5rem; cursor: pointer; transition: all .15s;
-      display: inline-flex; align-items: center; gap: .35rem;
-      font-family: 'Inter', sans-serif;
-    }
-    .btn-outline { background: #fff; border: 1.5px solid #e2e8f0; color: #64748b; }
+    .btn-sm { font-size: .75rem; font-weight: 600; padding: .35rem .9rem; border-radius: .5rem; cursor: pointer; transition: all .15s; display: inline-flex; align-items: center; gap: .35rem; font-family: 'Inter', sans-serif; }
+    .btn-outline { background: var(--bg-card); border: 1.5px solid var(--border); color: var(--text-muted); }
     .btn-outline:hover { border-color: #6366f1; color: #6366f1; background: #eef2ff; }
+    html.dark .btn-outline:hover { background: #1e1b4b; }
     .btn-danger-sm { background: none; border: none; color: #f87171; cursor: pointer; font-size: .75rem; font-weight: 600; }
     .btn-danger-sm:hover { color: #dc2626; }
 
     /* ── Printer cards ── */
     .printer-card {
-      border: 1.5px solid #e2e8f0; border-radius: .875rem;
-      padding: 1rem 1.25rem; background: #fff;
+      border: 1.5px solid var(--border); border-radius: .875rem;
+      padding: 1rem 1.25rem; background: var(--bg-card);
       transition: box-shadow .15s, border-color .15s;
-      position: relative;
     }
     .printer-card:hover { box-shadow: 0 4px 12px rgb(0 0 0/.06); border-color: #c7d2fe; }
-    .printer-card.selected { border-color: #6366f1; box-shadow: 0 0 0 3px rgb(99 102 241/.12); }
+    html.dark .printer-card:hover { border-color: #4338ca; }
 
     /* ── Table ── */
-    .tbl th {
-      font-size: .68rem; font-weight: 700; letter-spacing: .06em;
-      text-transform: uppercase; color: #94a3b8;
-      padding: .625rem 1rem; background: #f8fafc;
-      border-bottom: 1.5px solid #e2e8f0; white-space: nowrap;
-    }
-    .tbl td {
-      padding: .625rem 1rem; font-size: .8rem;
-      border-bottom: 1px solid #f1f5f9; color: #334155;
-    }
+    .tbl th { font-size: .68rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-faint); padding: .625rem 1rem; background: var(--bg-muted); border-bottom: 1.5px solid var(--border); white-space: nowrap; }
+    .tbl td { padding: .625rem 1rem; font-size: .8rem; border-bottom: 1px solid var(--bg-muted); color: var(--text); }
     .tbl tr:last-child td { border-bottom: none; }
     .tbl tbody tr { transition: background .1s; }
-    .tbl tbody tr:hover td { background: #f8fafc; }
+    .tbl tbody tr:hover td { background: var(--bg-hover); }
     .tbl tbody tr.current td { background: #eef2ff; }
+    html.dark .tbl tbody tr.current td { background: #1e1b4b; }
 
     /* ── Collapsible ── */
     .collapse-btn { cursor: pointer; user-select: none; }
     .collapse-content { overflow: hidden; transition: max-height .3s ease; }
 
     /* ── Header decoration ── */
-    .header-glow {
-      position: absolute; top: -60px; right: -40px;
-      width: 260px; height: 260px; border-radius: 9999px;
-      background: radial-gradient(circle, rgb(139 92 246/.25), transparent 70%);
-      pointer-events: none;
-    }
+    .header-glow { position: absolute; top: -60px; right: -40px; width: 260px; height: 260px; border-radius: 9999px; background: radial-gradient(circle,rgb(139 92 246/.25),transparent 70%); pointer-events: none; }
 
     /* ── Select arrow ── */
     .select-wrap { position: relative; }
-    .select-wrap::after {
-      content: ''; position: absolute; right: .75rem; top: 50%;
-      transform: translateY(-50%); pointer-events: none;
-      width: 0; height: 0;
-      border-left: 4px solid transparent; border-right: 4px solid transparent;
-      border-top: 5px solid #94a3b8;
-    }
+    .select-wrap::after { content: ''; position: absolute; right: .75rem; top: 50%; transform: translateY(-50%); pointer-events: none; width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid var(--text-faint); }
 
-    /* ── Depr info badge ── */
-    .depr-badge {
-      display: inline-flex; align-items: center; gap: .375rem;
-      font-size: .75rem; font-weight: 600;
-      background: #f5f3ff; color: #7c3aed;
-      border: 1px solid #ddd6fe; border-radius: .5rem;
-      padding: .375rem .75rem;
+    /* ── Depr badge ── */
+    .depr-badge { display: inline-flex; align-items: center; gap: .375rem; font-size: .75rem; font-weight: 600; background: #f5f3ff; color: #7c3aed; border: 1px solid #ddd6fe; border-radius: .5rem; padding: .375rem .75rem; }
+    html.dark .depr-badge { background: #2d1f5e; border-color: #4c1d95; color: #c4b5fd; }
+
+    /* ── Tailwind bg overrides en dark ── */
+    html.dark .bg-slate-50  { background-color: var(--bg-muted)  !important; }
+    html.dark .bg-slate-100 { background-color: #2d3f55          !important; }
+    html.dark .bg-white     { background-color: var(--bg-card)   !important; }
+    html.dark .bg-indigo-50 { background-color: #1e1b4b          !important; }
+    html.dark .bg-emerald-50{ background-color: #052e16          !important; }
+    html.dark .bg-amber-50  { background-color: #2d1a00          !important; }
+    html.dark .bg-violet-50 { background-color: #2d1f5e          !important; }
+    html.dark .bg-violet-100{ background-color: #3b0764          !important; }
+    html.dark .border-slate-200 { border-color: var(--border)    !important; }
+    html.dark .border-violet-200{ border-color: #4c1d95          !important; }
+    /* Add printer form background en dark */
+    html.dark .border-dashed { border-color: #4c1d95 !important; background: rgba(45,31,94,.35) !important; }
+
+    /* ── Toggle de tema ── */
+    .theme-btn {
+      width: 2rem; height: 2rem; border-radius: 9999px; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,.15); color: #fff;
+      transition: background .15s;
     }
+    .theme-btn:hover { background: rgba(255,255,255,.25); }
   </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
@@ -210,6 +229,16 @@
         </div>
       </div>
       <div class="flex items-center gap-3">
+        <!-- Theme toggle -->
+        <button class="theme-btn" onclick="toggleTheme()" title="Cambiar tema" id="themeBtn">
+          <svg id="iconSun" class="w-4 h-4 hidden" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"/>
+          </svg>
+          <svg id="iconMoon" class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
+          </svg>
+        </button>
+
         <!-- Feature badge (hidden on small screens) -->
         <div class="hidden lg:flex items-center gap-2 text-xs text-indigo-200 font-medium
                     bg-white/10 backdrop-blur px-3 py-1.5 rounded-full border border-white/20">
@@ -976,6 +1005,18 @@
       const sel = document.getElementById('printerSelect');
       if (sel && sel.value) onPrinterChange(sel);
     })();
+
+    // ── Tema claro / oscuro ───────────────────────────────────────────────
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      syncThemeIcons(isDark);
+    }
+    function syncThemeIcons(isDark) {
+      document.getElementById('iconSun').classList.toggle('hidden', !isDark);
+      document.getElementById('iconMoon').classList.toggle('hidden', isDark);
+    }
+    syncThemeIcons(document.documentElement.classList.contains('dark'));
 
     // ── Pills de multiplicador ───────────────────────────────────────────
     function setMultiplier(value) {
