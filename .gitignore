@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+calc3d.db
+calc3d.db-wal
+calc3d.db-shm
+data.json

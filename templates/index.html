@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calc3D — Calculadora de Impresión 3D</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            brand: { 50:'#eef2ff', 100:'#e0e7ff', 400:'#818cf8', 500:'#6366f1', 600:'#4f46e5', 700:'#4338ca' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+
+    .card {
+      background: #fff; border-radius: 1rem;
+      border: 1px solid #e2e8f0; padding: 1.5rem;
+      box-shadow: 0 1px 3px 0 rgb(0 0 0/.04), 0 1px 2px -1px rgb(0 0 0/.04);
+    }
+
+    /* ── Inputs ── */
+    .input-wrap { position: relative; }
+    .input-icon {
+      position: absolute; left: .75rem; top: 50%; transform: translateY(-50%);
+      color: #94a3b8; pointer-events: none; width: 1rem; height: 1rem;
+    }
+    .input, .select {
+      width: 100%; border-radius: .5rem; border: 1.5px solid #e2e8f0;
+      padding: .5rem .75rem .5rem 2.25rem;
+      font-size: .875rem; color: #1e293b; background: #f8fafc;
+      transition: border-color .15s, box-shadow .15s, background .15s; outline: none;
+      font-family: 'Inter', sans-serif;
+    }
+    .input:focus, .select:focus {
+      border-color: #6366f1; box-shadow: 0 0 0 3px rgb(99 102 241/.12); background: #fff;
+    }
+    .input::placeholder { color: #cbd5e1; }
+    .input:read-only { background: #f1f5f9; color: #64748b; cursor: not-allowed; }
+    .select { appearance: none; padding-right: 2rem; cursor: pointer; }
+
+    /* ── Section badges ── */
+    .section-badge {
+      display: inline-flex; align-items: center; gap: .375rem;
+      font-size: .7rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+      color: #6366f1; background: #eef2ff; border-radius: 9999px;
+      padding: .25rem .75rem; margin-bottom: .75rem;
+    }
+    .field-label {
+      display: block; font-size: .7rem; font-weight: 700;
+      letter-spacing: .05em; text-transform: uppercase;
+      color: #94a3b8; margin-bottom: .375rem;
+    }
+    .form-divider { height: 1px; background: #f1f5f9; }
+
+    /* ── Stat cards ── */
+    .stat {
+      border-radius: .875rem; padding: 1rem 1.25rem;
+      background: #fff; border: 1.5px solid #e2e8f0;
+      display: flex; flex-direction: column; gap: .2rem;
+      position: relative; overflow: hidden;
+      transition: box-shadow .15s;
+    }
+    .stat:hover { box-shadow: 0 4px 12px rgb(0 0 0/.07); }
+    .stat::before {
+      content: ''; position: absolute; top: 0; left: 0;
+      width: 3px; height: 100%; border-radius: 1px;
+    }
+    .stat-gray::before   { background: #94a3b8; }
+    .stat-violet::before { background: #8b5cf6; }
+    .stat-indigo::before { background: #6366f1; }
+    .stat-green::before  { background: #10b981; }
+    .stat-amber::before  { background: #f59e0b; }
+    .stat-label { font-size: .68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+    .stat-value { font-size: 1.2rem; font-weight: 700; letter-spacing: -.02em; }
+    .stat-icon {
+      position: absolute; right: .875rem; top: .875rem;
+      width: 1.75rem; height: 1.75rem; border-radius: .5rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── Pills ── */
+    .pill {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: .375rem 1rem; border-radius: 9999px;
+      font-size: .8125rem; font-weight: 700;
+      border: 1.5px solid #e2e8f0; cursor: pointer;
+      transition: all .15s; background: #fff; color: #64748b; user-select: none;
+    }
+    .pill:hover { border-color: #6366f1; color: #6366f1; background: #eef2ff; }
+    .pill.active {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-color: transparent; color: #fff;
+      box-shadow: 0 2px 8px rgb(99 102 241/.35);
+    }
+
+    /* ── Buttons ── */
+    .btn-primary {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      color: #fff; font-weight: 700; font-size: .875rem;
+      padding: .6rem 1.5rem; border-radius: .75rem; border: none; cursor: pointer;
+      box-shadow: 0 2px 10px rgb(99 102 241/.35);
+      transition: transform .15s, box-shadow .15s; letter-spacing: -.01em;
+      font-family: 'Inter', sans-serif; display: inline-flex; align-items: center; gap: .5rem;
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgb(99 102 241/.45); }
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-sm {
+      font-size: .75rem; font-weight: 600; padding: .35rem .9rem;
+      border-radius: .5rem; cursor: pointer; transition: all .15s;
+      display: inline-flex; align-items: center; gap: .35rem;
+      font-family: 'Inter', sans-serif;
+    }
+    .btn-outline { background: #fff; border: 1.5px solid #e2e8f0; color: #64748b; }
+    .btn-outline:hover { border-color: #6366f1; color: #6366f1; background: #eef2ff; }
+    .btn-danger-sm { background: none; border: none; color: #f87171; cursor: pointer; font-size: .75rem; font-weight: 600; }
+    .btn-danger-sm:hover { color: #dc2626; }
+
+    /* ── Printer cards ── */
+    .printer-card {
+      border: 1.5px solid #e2e8f0; border-radius: .875rem;
+      padding: 1rem 1.25rem; background: #fff;
+      transition: box-shadow .15s, border-color .15s;
+      position: relative;
+    }
+    .printer-card:hover { box-shadow: 0 4px 12px rgb(0 0 0/.06); border-color: #c7d2fe; }
+    .printer-card.selected { border-color: #6366f1; box-shadow: 0 0 0 3px rgb(99 102 241/.12); }
+
+    /* ── Table ── */
+    .tbl th {
+      font-size: .68rem; font-weight: 700; letter-spacing: .06em;
+      text-transform: uppercase; color: #94a3b8;
+      padding: .625rem 1rem; background: #f8fafc;
+      border-bottom: 1.5px solid #e2e8f0; white-space: nowrap;
+    }
+    .tbl td {
+      padding: .625rem 1rem; font-size: .8rem;
+      border-bottom: 1px solid #f1f5f9; color: #334155;
+    }
+    .tbl tr:last-child td { border-bottom: none; }
+    .tbl tbody tr { transition: background .1s; }
+    .tbl tbody tr:hover td { background: #f8fafc; }
+    .tbl tbody tr.current td { background: #eef2ff; }
+
+    /* ── Collapsible ── */
+    .collapse-btn { cursor: pointer; user-select: none; }
+    .collapse-content { overflow: hidden; transition: max-height .3s ease; }
+
+    /* ── Header decoration ── */
+    .header-glow {
+      position: absolute; top: -60px; right: -40px;
+      width: 260px; height: 260px; border-radius: 9999px;
+      background: radial-gradient(circle, rgb(139 92 246/.25), transparent 70%);
+      pointer-events: none;
+    }
+
+    /* ── Select arrow ── */
+    .select-wrap { position: relative; }
+    .select-wrap::after {
+      content: ''; position: absolute; right: .75rem; top: 50%;
+      transform: translateY(-50%); pointer-events: none;
+      width: 0; height: 0;
+      border-left: 4px solid transparent; border-right: 4px solid transparent;
+      border-top: 5px solid #94a3b8;
+    }
+
+    /* ── Depr info badge ── */
+    .depr-badge {
+      display: inline-flex; align-items: center; gap: .375rem;
+      font-size: .75rem; font-weight: 600;
+      background: #f5f3ff; color: #7c3aed;
+      border: 1px solid #ddd6fe; border-radius: .5rem;
+      padding: .375rem .75rem;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <header class="relative overflow-hidden" style="background: linear-gradient(135deg,#312e81 0%,#4f46e5 50%,#7c3aed 100%);">
+    <div class="header-glow"></div>
+    <div class="absolute inset-0 opacity-10"
+         style="background-image:repeating-linear-gradient(0deg,#fff 0,#fff 1px,transparent 1px,transparent 40px),
+                                 repeating-linear-gradient(90deg,#fff 0,#fff 1px,transparent 1px,transparent 40px);">
+    </div>
+    <div class="relative max-w-6xl mx-auto px-6 py-7 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-2xl flex items-center justify-center"
+             style="background:rgba(255,255,255,.15);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.2);">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6h.01M18 18h.01M12 12l4.5-4.5M3 21l4-4"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 3H5a2 2 0 00-2 2v3m16-5h-3a2 2 0 00-2 2v.5M21 8V5a2 2 0 00-2-2h-3M3 16v3a2 2 0 002 2h3m8 0h3a2 2 0 002-2v-3"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-white font-extrabold text-2xl leading-none tracking-tight">Calc3D</h1>
+          <p class="text-indigo-200 text-xs mt-0.5">Calculadora de costos de impresión 3D</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <!-- Feature badge (hidden on small screens) -->
+        <div class="hidden lg:flex items-center gap-2 text-xs text-indigo-200 font-medium
+                    bg-white/10 backdrop-blur px-3 py-1.5 rounded-full border border-white/20">
+          <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+          </svg>
+          Filamento · Electricidad · Depreciación · Ganancia
+        </div>
+
+        <!-- User widget -->
+        <div class="flex items-center gap-2 bg-white/10 backdrop-blur border border-white/20
+                    rounded-full pl-1.5 pr-3 py-1">
+          <div class="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          <span class="text-xs font-semibold text-white">{{ current_user.username }}</span>
+          <form method="POST" action="/logout" class="flex">
+            <button type="submit"
+                    class="text-indigo-200 hover:text-white transition ml-1"
+                    title="Cerrar sesión">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+              </svg>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- PANEL: MIS IMPRESORAS                                               -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <section class="card space-y-4" id="printerPanel">
+
+      <!-- Header collapsible -->
+      <div class="flex items-center justify-between collapse-btn" onclick="togglePrinters()">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center">
+            <svg class="w-4 h-4 text-violet-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="font-bold text-slate-800 text-sm leading-none">Mis impresoras</h2>
+            <p class="text-xs text-slate-400 mt-0.5">Gestión y depreciación por equipo</p>
+          </div>
+          {% if printers %}
+          <span class="text-xs font-bold text-violet-600 bg-violet-100 px-2 py-0.5 rounded-full">
+            {{ printers|length }}
+          </span>
+          {% endif %}
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="event.stopPropagation(); toggleAddPrinter()"
+                  class="btn-sm btn-outline">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+            </svg>
+            Agregar
+          </button>
+          <svg id="printerChevron" class="w-4 h-4 text-slate-400 transition-transform duration-200"
+               fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Collapsible content -->
+      <div id="printerContent" class="collapse-content space-y-4" style="max-height: 2000px;">
+
+        <!-- Add printer form -->
+        <div id="addPrinterForm" class="hidden">
+          <div class="rounded-xl border-2 border-dashed border-violet-200 bg-violet-50/40 p-4 space-y-4">
+            <p class="text-xs font-bold text-violet-600 uppercase tracking-wide">Nueva impresora</p>
+            <form method="POST" action="/printers/add">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div class="lg:col-span-2">
+                  <label class="field-label">Nombre / modelo</label>
+                  <div class="input-wrap">
+                    <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z"/>
+                    </svg>
+                    <input class="input" type="text" name="name" placeholder="Ej: Ender 3 Pro" required />
+                  </div>
+                </div>
+                <div>
+                  <label class="field-label">Consumo (W)</label>
+                  <div class="input-wrap">
+                    <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                    <input class="input" type="number" name="watts" step="1" min="1"
+                           placeholder="200" required />
+                  </div>
+                </div>
+                <div>
+                  <label class="field-label">Precio de compra ($)</label>
+                  <div class="input-wrap">
+                    <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <input class="input" type="number" name="purchase_price" step="0.01" min="0"
+                           placeholder="250.00" required />
+                  </div>
+                </div>
+                <div>
+                  <label class="field-label">Vida útil (años)</label>
+                  <div class="input-wrap">
+                    <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10"/>
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2"/>
+                    </svg>
+                    <input class="input" type="number" name="lifespan_years" step="0.5" min="0.5" max="20"
+                           placeholder="5" required />
+                  </div>
+                </div>
+                <div class="sm:col-span-2 lg:col-span-3 flex items-end">
+                  <p class="text-xs text-slate-400">
+                    La depreciación por hora se calcula como <strong class="text-slate-600">precio ÷ (años × 8 760 h)</strong>
+                    y se suma automáticamente al costo de producción cuando uses esta impresora.
+                  </p>
+                </div>
+                <div class="flex items-end justify-end">
+                  <button type="submit" class="btn-primary w-full justify-center" style="background:linear-gradient(135deg,#7c3aed,#6366f1);">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Guardar
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Printer list -->
+        {% if printers %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {% for p in printers %}
+          <div class="printer-card">
+            <!-- Top row -->
+            <div class="flex items-start justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-violet-100 flex items-center justify-center flex-shrink-0">
+                  <svg class="w-3.5 h-3.5 text-violet-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a1 1 0 001 1h8a1 1 0 001-1v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a1 1 0 00-1-1H6a1 1 0 00-1 1zm2 3h6V4H7v3zm-1 9v-2h8v2H6zm7-5a1 1 0 11-2 0 1 1 0 012 0z" clip-rule="evenodd"/>
+                  </svg>
+                </div>
+                <span class="font-bold text-slate-800 text-sm leading-tight">{{ p.name }}</span>
+              </div>
+              <form method="POST" action="/printers/delete/{{ p.id }}"
+                    onsubmit="return confirm('¿Eliminar {{ p.name }}?')">
+                <button type="submit" class="btn-danger-sm flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  </svg>
+                  Eliminar
+                </button>
+              </form>
+            </div>
+            <!-- Stats row -->
+            <div class="grid grid-cols-3 gap-2">
+              <div class="bg-slate-50 rounded-lg p-2 text-center">
+                <div class="text-xs text-slate-400 font-medium">Consumo</div>
+                <div class="text-sm font-bold text-slate-700">{{ p.watts }}W</div>
+              </div>
+              <div class="bg-slate-50 rounded-lg p-2 text-center">
+                <div class="text-xs text-slate-400 font-medium">Precio</div>
+                <div class="text-sm font-bold text-slate-700">${{ "%.0f"|format(p.purchase_price) }}</div>
+              </div>
+              <div class="bg-slate-50 rounded-lg p-2 text-center">
+                <div class="text-xs text-slate-400 font-medium">Vida útil</div>
+                <div class="text-sm font-bold text-slate-700">{{ p.lifespan_years }} años</div>
+                <div class="text-xs text-slate-400">≈ {{ "%.0f"|format(p.lifespan_hours) }}h</div>
+              </div>
+            </div>
+            <!-- Depreciation badge -->
+            <div class="mt-3 flex items-center gap-1.5 bg-violet-50 border border-violet-200 rounded-lg px-3 py-2">
+              <svg class="w-3.5 h-3.5 text-violet-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clip-rule="evenodd"/>
+              </svg>
+              <span class="text-xs text-violet-700 font-semibold">
+                Depreciación: <strong>${{ "%.6f"|format(p.depreciation_per_hour) }}/h</strong>
+                &nbsp;·&nbsp; ${{ "%.4f"|format(p.depreciation_per_hour * 8) }} en 8h típicas
+              </span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-8 text-slate-400">
+          <svg class="w-10 h-10 mx-auto mb-2 text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+          </svg>
+          <p class="text-sm font-medium">Aún no hay impresoras guardadas</p>
+          <p class="text-xs mt-1">Agrega una para calcular la depreciación automáticamente</p>
+        </div>
+        {% endif %}
+
+      </div><!-- /printerContent -->
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- FORMULARIO DE CÁLCULO                                              -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <form method="POST" action="/calculate" id="calcForm">
+      <div class="card space-y-7">
+
+        <!-- Sección: Filamento -->
+        <div>
+          <div class="section-badge">
+            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M10 2a8 8 0 100 16A8 8 0 0010 2zm0 14a6 6 0 110-12 6 6 0 010 12z"/>
+            </svg>
+            Filamento
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="field-label">Peso usado (g)</label>
+              <div class="input-wrap">
+                <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 6l3 1m0 0l-3 9a5 5 0 006.9 4.9M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5 5 0 01-6.9 4.9M18 7l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
+                </svg>
+                <input class="input" type="number" name="filament_weight" step="0.1" min="0"
+                       value="{{ last_result.filament_weight if last_result else '' }}"
+                       placeholder="85" required />
+              </div>
+            </div>
+            <div>
+              <label class="field-label">Precio por kg ($)</label>
+              <div class="input-wrap">
+                <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <input class="input" type="number" name="filament_price_kg" step="0.01" min="0"
+                       value="{{ last_result.filament_price_kg if last_result else '' }}"
+                       placeholder="25.00" required />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-divider"></div>
+
+        <!-- Sección: Impresora + Electricidad -->
+        <div>
+          <div class="section-badge" style="color:#7c3aed;background:#f5f3ff;">
+            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a1 1 0 001 1h8a1 1 0 001-1v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a1 1 0 00-1-1H6a1 1 0 00-1 1zm2 3h6V4H7v3zm-1 9v-2h8v2H6zm7-5a1 1 0 11-2 0 1 1 0 012 0z" clip-rule="evenodd"/>
+            </svg>
+            Impresora &amp; Electricidad
+          </div>
+
+          <!-- Printer selector -->
+          <div class="mb-4">
+            <label class="field-label">Impresora</label>
+            <div class="select-wrap">
+              <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+              </svg>
+              <select class="select" name="printer_id" id="printerSelect" onchange="onPrinterChange(this)">
+                <option value="">Manual (ingresar watts y sin depreciación)</option>
+                {% for p in printers %}
+                <option value="{{ p.id }}"
+                  data-watts="{{ p.watts }}"
+                  data-depr="{{ p.depreciation_per_hour }}"
+                  data-name="{{ p.name }}"
+                  {{ 'selected' if last_result and last_result.printer_id == p.id }}>
+                  {{ p.name }} — {{ p.watts }}W
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Depreciation info (shown when printer selected) -->
+            <div id="deprInfo" class="mt-2 hidden">
+              <div class="depr-badge">
+                <svg class="w-3.5 h-3.5 text-violet-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clip-rule="evenodd"/>
+                </svg>
+                <span id="deprText">Depreciación: $0/h</span>
+                <span class="text-violet-400">·</span>
+                <span id="deprTotalText" class="text-violet-500"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label class="field-label">Tiempo de impresión (h)</label>
+              <div class="input-wrap">
+                <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2"/>
+                </svg>
+                <input class="input" type="number" name="print_time" id="printTime"
+                       step="0.1" min="0"
+                       value="{{ last_result.print_time if last_result else '' }}"
+                       placeholder="4.5" required
+                       oninput="updateDeprTotal()" />
+              </div>
+            </div>
+            <div>
+              <label class="field-label">Potencia impresora (W)</label>
+              <div class="input-wrap">
+                <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                <input class="input" type="number" name="printer_watts" id="printerWatts"
+                       step="1" min="0"
+                       value="{{ last_result.printer_watts if last_result else '' }}"
+                       placeholder="200" required />
+              </div>
+            </div>
+            <div>
+              <label class="field-label">Tarifa eléctrica ($/kWh)</label>
+              <div class="input-wrap">
+                <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/>
+                </svg>
+                <input class="input" type="number" name="electricity_rate" step="0.001" min="0"
+                       value="{{ last_result.electricity_rate if last_result else '' }}"
+                       placeholder="0.15" required />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-divider"></div>
+
+        <!-- Sección: Producción -->
+        <div>
+          <div class="section-badge">
+            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"/>
+            </svg>
+            Producción
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="field-label">Otros costos ($) <span class="normal-case font-normal text-slate-400">(desgaste, post-proc.)</span></label>
+              <div class="input-wrap">
+                <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                </svg>
+                <input class="input" type="number" name="other_costs" step="0.01" min="0"
+                       value="{{ last_result.other_costs if last_result else '0' }}"
+                       placeholder="0.50" />
+              </div>
+            </div>
+            <div>
+              <label class="field-label">Cantidad de unidades</label>
+              <div class="input-wrap">
+                <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5 5 0 019.288 0"/>
+                </svg>
+                <input class="input" type="number" name="quantity" step="1" min="1"
+                       value="{{ last_result.quantity if last_result else '1' }}"
+                       placeholder="10" required />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-divider"></div>
+
+        <!-- Multiplicador -->
+        <div>
+          <label class="field-label mb-2">Multiplicador de precio</label>
+          <div class="flex flex-wrap gap-2" id="pillGroup">
+            {% set presets = ['1','2','3','4','5'] %}
+            {% set cur = last_result.multiplier|string if last_result else '2' %}
+            {% for p in presets %}
+              {% set is_active = (cur == p) or (cur == p + '.0') %}
+              <button type="button" class="pill {{ 'active' if is_active }}"
+                      onclick="setMultiplier('{{ p }}')">×{{ p }}</button>
+            {% endfor %}
+            <button type="button"
+                    class="pill {{ 'active' if cur not in ['1','1.0','2','2.0','3','3.0','4','4.0','5','5.0'] }}"
+                    onclick="setMultiplier('custom')">Personalizado</button>
+          </div>
+          <input type="hidden" name="multiplier_preset" id="multiplierPreset"
+                 value="{{ 'custom' if last_result and last_result.multiplier not in [1,2,3,4,5] else (last_result.multiplier|int|string if last_result else '2') }}" />
+          <div id="customInput" class="mt-3 {{ '' if last_result and last_result.multiplier not in [1,2,3,4,5] else 'hidden' }}">
+            <div class="input-wrap w-44">
+              <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+              </svg>
+              <input class="input" type="number" name="custom_multiplier" step="0.1" min="0.1"
+                     placeholder="Ej: 2.5"
+                     value="{{ last_result.multiplier if last_result and last_result.multiplier not in [1,2,3,4,5] else '' }}" />
+            </div>
+          </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="flex justify-end pt-1">
+          <button type="submit" class="btn-primary">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M4 19h16a2 2 0 002-2V7a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+            </svg>
+            Calcular costo
+          </button>
+        </div>
+
+      </div>
+    </form>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- RESULTADOS                                                          -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    {% if last_result %}
+    <section id="results" class="space-y-5">
+
+      <div class="flex items-center gap-3">
+        <div class="h-px flex-1 bg-slate-200"></div>
+        <span class="text-xs font-bold uppercase tracking-widest text-slate-400">
+          Resultado #{{ last_result.id }}
+          {% if last_result.printer_name %}— {{ last_result.printer_name }}{% endif %}
+        </span>
+        <div class="h-px flex-1 bg-slate-200"></div>
+      </div>
+
+      <!-- Stat grid: ahora 3 columnas en sm y 5 en lg para hacer espacio a depreciación -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+
+        <div class="stat stat-gray">
+          <div class="stat-icon bg-slate-100">
+            <svg class="w-3.5 h-3.5 text-slate-500" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M10 2a8 8 0 100 16A8 8 0 0010 2zm0 14a6 6 0 110-12 6 6 0 010 12z"/>
+            </svg>
+          </div>
+          <span class="stat-label text-slate-400">Filamento</span>
+          <span class="stat-value text-slate-800">${{ "%.4f"|format(last_result.filament_cost) }}</span>
+        </div>
+
+        <div class="stat stat-gray">
+          <div class="stat-icon bg-slate-100">
+            <svg class="w-3.5 h-3.5 text-slate-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          <span class="stat-label text-slate-400">Electricidad</span>
+          <span class="stat-value text-slate-800">${{ "%.4f"|format(last_result.electricity_cost) }}</span>
+        </div>
+
+        <!-- Depreciación: aparece siempre, en 0 si no hay impresora -->
+        <div class="stat {{ 'stat-violet' if last_result.depreciation_cost > 0 else 'stat-gray' }}">
+          <div class="stat-icon {{ 'bg-violet-100' if last_result.depreciation_cost > 0 else 'bg-slate-100' }}">
+            <svg class="w-3.5 h-3.5 {{ 'text-violet-600' if last_result.depreciation_cost > 0 else 'text-slate-400' }}" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          <span class="stat-label {{ 'text-violet-500' if last_result.depreciation_cost > 0 else 'text-slate-400' }}">
+            Depreciación
+          </span>
+          <span class="stat-value {{ 'text-violet-700' if last_result.depreciation_cost > 0 else 'text-slate-400' }}">
+            ${{ "%.4f"|format(last_result.depreciation_cost) }}
+          </span>
+          {% if last_result.printer_name %}
+          <span class="text-xs text-violet-400 truncate">{{ last_result.printer_name }}</span>
+          {% else %}
+          <span class="text-xs text-slate-300">Sin impresora</span>
+          {% endif %}
+        </div>
+
+        <div class="stat stat-indigo">
+          <div class="stat-icon bg-indigo-50">
+            <svg class="w-3.5 h-3.5 text-brand-500" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zm0 16a3 3 0 01-3-3h6a3 3 0 01-3 3z"/>
+            </svg>
+          </div>
+          <span class="stat-label text-brand-500">Costo base / u</span>
+          <span class="stat-value text-brand-700">${{ "%.4f"|format(last_result.base_cost_per_unit) }}</span>
+        </div>
+
+        <div class="stat stat-indigo">
+          <div class="stat-icon bg-indigo-50">
+            <svg class="w-3.5 h-3.5 text-brand-500" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"/>
+            </svg>
+          </div>
+          <span class="stat-label text-brand-500">Base total ×{{ last_result.quantity }}u</span>
+          <span class="stat-value text-brand-700">${{ "%.4f"|format(last_result.total_base_cost) }}</span>
+        </div>
+
+        <div class="stat stat-green">
+          <div class="stat-icon bg-emerald-50">
+            <svg class="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          <span class="stat-label text-emerald-600">Venta/u (×{{ last_result.multiplier }})</span>
+          <span class="stat-value text-emerald-700">${{ "%.4f"|format(last_result.selling_price_per_unit) }}</span>
+        </div>
+
+        <div class="stat stat-green">
+          <div class="stat-icon bg-emerald-50">
+            <svg class="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          <span class="stat-label text-emerald-600">Total venta</span>
+          <span class="stat-value text-emerald-700">${{ "%.4f"|format(last_result.total_selling_price) }}</span>
+        </div>
+
+        <div class="stat stat-amber">
+          <div class="stat-icon bg-amber-50">
+            <svg class="w-3.5 h-3.5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          <span class="stat-label text-amber-600">Ganancia total</span>
+          <span class="stat-value text-amber-700">${{ "%.4f"|format(last_result.profit) }}</span>
+        </div>
+
+        <div class="stat stat-amber">
+          <div class="stat-icon bg-amber-50">
+            <svg class="w-3.5 h-3.5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>
+            </svg>
+          </div>
+          <span class="stat-label text-amber-600">Margen</span>
+          <span class="stat-value text-amber-700">{{ last_result.margin_pct }}%</span>
+        </div>
+
+      </div>
+
+      <!-- Desglose de costo (breakdown bar) -->
+      {% set total = last_result.base_cost_per_unit %}
+      {% if total > 0 %}
+      <div class="card py-4 px-5">
+        <p class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Desglose del costo base por unidad</p>
+        <div class="flex rounded-full overflow-hidden h-3">
+          {% set pf = (last_result.filament_cost / total * 100) %}
+          {% set pe = (last_result.electricity_cost / total * 100) %}
+          {% set pd = (last_result.depreciation_cost / total * 100) %}
+          {% set po = (last_result.other_costs / total * 100) %}
+          <div style="width:{{ pf }}%" class="bg-slate-400" title="Filamento {{ '%.1f'|format(pf) }}%"></div>
+          <div style="width:{{ pe }}%" class="bg-brand-500" title="Electricidad {{ '%.1f'|format(pe) }}%"></div>
+          <div style="width:{{ pd }}%" class="bg-violet-500" title="Depreciación {{ '%.1f'|format(pd) }}%"></div>
+          <div style="width:{{ po }}%" class="bg-amber-400" title="Otros {{ '%.1f'|format(po) }}%"></div>
+        </div>
+        <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+          <span class="flex items-center gap-1.5 text-xs text-slate-500">
+            <span class="w-2.5 h-2.5 rounded-sm bg-slate-400 flex-shrink-0"></span>
+            Filamento {{ "%.1f"|format(pf) }}%
+          </span>
+          <span class="flex items-center gap-1.5 text-xs text-slate-500">
+            <span class="w-2.5 h-2.5 rounded-sm bg-brand-500 flex-shrink-0"></span>
+            Electricidad {{ "%.1f"|format(pe) }}%
+          </span>
+          <span class="flex items-center gap-1.5 text-xs text-slate-500">
+            <span class="w-2.5 h-2.5 rounded-sm bg-violet-500 flex-shrink-0"></span>
+            Depreciación {{ "%.1f"|format(pd) }}%
+          </span>
+          {% if last_result.other_costs > 0 %}
+          <span class="flex items-center gap-1.5 text-xs text-slate-500">
+            <span class="w-2.5 h-2.5 rounded-sm bg-amber-400 flex-shrink-0"></span>
+            Otros {{ "%.1f"|format(po) }}%
+          </span>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Charts -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+        <!-- Chart 1: Cost breakdown per multiplier -->
+        <div class="card">
+          <div class="mb-4">
+            <h3 class="font-bold text-slate-800 text-sm">Composición del precio por multiplicador</h3>
+            <p class="text-xs text-slate-400 mt-0.5">
+              Costo fijo vs. ganancia según el multiplicador aplicado (por unidad)
+            </p>
+          </div>
+          <div class="relative h-72">
+            <canvas id="chartBreakdown"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 2: Profit vs quantity -->
+        <div class="card">
+          <div class="mb-4">
+            <h3 class="font-bold text-slate-800 text-sm">Ganancia acumulada vs. Cantidad</h3>
+            <p class="text-xs text-slate-400 mt-0.5">
+              Ganancia total según cuántas unidades vendés · Costo base/u:
+              <strong class="text-slate-600">${{ "%.4f"|format(last_result.base_cost_per_unit) }}</strong>
+            </p>
+          </div>
+          <div class="relative h-72">
+            <canvas id="chartProfit"></canvas>
+          </div>
+        </div>
+
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- HISTORIAL                                                           -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    {% if history %}
+    <section class="card space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <h2 class="font-bold text-slate-800 text-sm">Historial de cálculos</h2>
+          <span class="text-xs font-bold text-brand-500 bg-brand-50 px-2 py-0.5 rounded-full">
+            {{ history|length }}
+          </span>
+        </div>
+        <form method="POST" action="/clear-history" onsubmit="return confirm('¿Borrar todo el historial?')">
+          <button type="submit" class="btn-danger-sm flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+            Limpiar
+          </button>
+        </form>
+      </div>
+
+      <div class="overflow-x-auto rounded-xl border border-slate-200">
+        <table class="tbl w-full text-left">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Fecha</th>
+              <th>Impresora</th>
+              <th>Filamento (g)</th>
+              <th>Tiempo (h)</th>
+              <th>Unidades</th>
+              <th>Mult.</th>
+              <th>Filamento</th>
+              <th>Electricidad</th>
+              <th>Depreciación</th>
+              <th>Costo base/u</th>
+              <th>Precio venta/u</th>
+              <th>Total venta</th>
+              <th>Margen</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in history %}
+            <tr class="{{ 'current' if last_result and r.id == last_result.id }}">
+              <td class="text-slate-400 font-mono text-xs">{{ r.id }}</td>
+              <td class="text-slate-500 whitespace-nowrap text-xs">{{ r.timestamp }}</td>
+              <td>
+                {% if r.printer_name %}
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-violet-100 text-violet-700">
+                  <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a1 1 0 001 1h8a1 1 0 001-1v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a1 1 0 00-1-1H6a1 1 0 00-1 1zm2 3h6V4H7v3zm-1 9v-2h8v2H6zm7-5a1 1 0 11-2 0 1 1 0 012 0z" clip-rule="evenodd"/>
+                  </svg>
+                  {{ r.printer_name }}
+                </span>
+                {% else %}
+                <span class="text-xs text-slate-400">Manual</span>
+                {% endif %}
+              </td>
+              <td>{{ r.filament_weight }}g</td>
+              <td>{{ r.print_time }}h</td>
+              <td>
+                <span class="px-1.5 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-600">
+                  {{ r.quantity }}u
+                </span>
+              </td>
+              <td>
+                <span class="px-1.5 py-0.5 rounded text-xs font-bold bg-indigo-100 text-indigo-700">
+                  ×{{ r.multiplier }}
+                </span>
+              </td>
+              <td class="font-mono text-xs text-slate-500">${{ "%.4f"|format(r.filament_cost) }}</td>
+              <td class="font-mono text-xs text-slate-500">${{ "%.4f"|format(r.electricity_cost) }}</td>
+              <td class="font-mono text-xs {{ 'text-violet-600 font-semibold' if r.depreciation_cost > 0 else 'text-slate-300' }}">
+                ${{ "%.4f"|format(r.depreciation_cost) }}
+              </td>
+              <td class="font-mono text-xs text-slate-600">${{ "%.4f"|format(r.base_cost_per_unit) }}</td>
+              <td class="font-mono text-xs font-semibold text-emerald-600">${{ "%.4f"|format(r.selling_price_per_unit) }}</td>
+              <td class="font-mono text-xs font-bold text-emerald-700">${{ "%.4f"|format(r.total_selling_price) }}</td>
+              <td class="font-mono text-xs font-semibold text-amber-600">{{ r.margin_pct }}%</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    {% endif %}
+
+  </main>
+
+  <footer class="text-center text-xs text-slate-400 py-10 mt-4">
+    Calc3D &mdash; Calculadora de costos de impresión 3D
+  </footer>
+
+  <!-- ── Scripts ────────────────────────────────────────────────────────── -->
+  <script>
+    // ── Datos de impresoras desde servidor ───────────────────────────────
+    const PRINTERS = {{ printers | tojson }};
+
+    // ── Collapsible del panel de impresoras ──────────────────────────────
+    let printerPanelOpen = true;
+    function togglePrinters() {
+      printerPanelOpen = !printerPanelOpen;
+      const content  = document.getElementById('printerContent');
+      const chevron  = document.getElementById('printerChevron');
+      content.style.maxHeight = printerPanelOpen ? '2000px' : '0';
+      chevron.style.transform = printerPanelOpen ? 'rotate(0deg)' : 'rotate(-90deg)';
+    }
+
+    // ── Formulario de nueva impresora ────────────────────────────────────
+    let addPrinterOpen = false;
+    function toggleAddPrinter() {
+      addPrinterOpen = !addPrinterOpen;
+      document.getElementById('addPrinterForm').classList.toggle('hidden', !addPrinterOpen);
+      if (addPrinterOpen && !printerPanelOpen) togglePrinters();
+    }
+
+    // ── Selector de impresora en formulario de cálculo ───────────────────
+    let currentDeprPerHour = 0;
+
+    function onPrinterChange(select) {
+      const val = select.value;
+      const wattsInput = document.getElementById('printerWatts');
+      const deprInfo   = document.getElementById('deprInfo');
+
+      if (!val) {
+        // Manual
+        wattsInput.readOnly = false;
+        wattsInput.value = '';
+        deprInfo.classList.add('hidden');
+        currentDeprPerHour = 0;
+      } else {
+        const opt = select.options[select.selectedIndex];
+        const watts = opt.dataset.watts;
+        const depr  = parseFloat(opt.dataset.depr);
+        currentDeprPerHour = depr;
+
+        wattsInput.readOnly = true;
+        wattsInput.value = watts;
+        deprInfo.classList.remove('hidden');
+        document.getElementById('deprText').textContent =
+          `Depreciación: $${depr.toFixed(6)}/h`;
+        updateDeprTotal();
+      }
+    }
+
+    function updateDeprTotal() {
+      if (!currentDeprPerHour) return;
+      const hours = parseFloat(document.getElementById('printTime').value) || 0;
+      const total = currentDeprPerHour * hours;
+      document.getElementById('deprTotalText').textContent =
+        `$${total.toFixed(4)} para esta impresión (${hours}h)`;
+    }
+
+    // Restaurar selector si hay resultado previo
+    (function restoreSelector() {
+      const sel = document.getElementById('printerSelect');
+      if (sel && sel.value) onPrinterChange(sel);
+    })();
+
+    // ── Pills de multiplicador ───────────────────────────────────────────
+    function setMultiplier(value) {
+      document.getElementById('multiplierPreset').value = value;
+      document.getElementById('customInput').classList.toggle('hidden', value !== 'custom');
+      document.querySelectorAll('#pillGroup .pill').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('onclick').includes(`'${value}'`));
+      });
+    }
+
+    // ── Gráficos ─────────────────────────────────────────────────────────
+    {% if chart_breakdown and chart_profit %}
+    (function () {
+      const tooltipDefaults = {
+        backgroundColor: '#1e293b', titleColor: '#94a3b8',
+        bodyColor: '#f1f5f9', borderColor: '#334155', borderWidth: 1,
+        padding: 10, cornerRadius: 8,
+      };
+      const legendDefaults = {
+        position: 'top',
+        labels: { boxWidth: 10, boxHeight: 10, borderRadius: 3, padding: 16, font: { size: 11, family: 'Inter' } }
+      };
+
+      // ── Chart 1: stacked bar — composición por multiplicador ───────────
+      const breakdownData = {{ chart_breakdown | safe }};
+      new Chart(document.getElementById('chartBreakdown').getContext('2d'), {
+        type: 'bar',
+        data: breakdownData,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: legendDefaults,
+            tooltip: {
+              ...tooltipDefaults,
+              callbacks: {
+                label: ctx => `  ${ctx.dataset.label}: $${ctx.parsed.y.toFixed(4)}`,
+                footer: items => {
+                  const total = items.reduce((s, i) => s + i.parsed.y, 0);
+                  return `  Total: $${total.toFixed(4)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              stacked: true,
+              grid: { display: false },
+              ticks: { color: '#64748b', font: { size: 12, weight: '600', family: 'Inter' } }
+            },
+            y: {
+              stacked: true,
+              title: { display: true, text: 'Precio de venta / unidad ($)', color: '#94a3b8', font: { size: 11, family: 'Inter' } },
+              grid: { color: '#f1f5f9' },
+              ticks: { color: '#94a3b8', font: { size: 11 }, callback: v => '$' + v.toFixed(3) }
+            }
+          }
+        }
+      });
+
+      // ── Chart 2: líneas de ganancia vs cantidad ────────────────────────
+      const profitData = {{ chart_profit | safe }};
+      new Chart(document.getElementById('chartProfit').getContext('2d'), {
+        type: 'line',
+        data: profitData,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: legendDefaults,
+            tooltip: {
+              ...tooltipDefaults,
+              callbacks: {
+                title: items => `${items[0].label} unidades`,
+                label: ctx => {
+                  const val = ctx.parsed.y;
+                  return val === 0
+                    ? `  ${ctx.dataset.label}: sin ganancia`
+                    : `  ${ctx.dataset.label}: $${val.toFixed(4)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              title: { display: true, text: 'Unidades vendidas', color: '#94a3b8', font: { size: 11, family: 'Inter' } },
+              grid: { color: '#f1f5f9' },
+              ticks: { color: '#94a3b8', font: { size: 11 } }
+            },
+            y: {
+              title: { display: true, text: 'Ganancia total ($)', color: '#94a3b8', font: { size: 11, family: 'Inter' } },
+              grid: { color: '#f1f5f9' },
+              ticks: { color: '#94a3b8', font: { size: 11 }, callback: v => '$' + v.toFixed(2) }
+            }
+          }
+        }
+      });
+
+      document.getElementById('results')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    })();
+    {% endif %}
+  </script>
+
+</body>
+</html>
