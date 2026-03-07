@@ -828,13 +828,12 @@
           </div>
         </div>
 
-        <!-- Chart 2: Profit vs quantity -->
+        <!-- Chart 2: Revenue vs cost by quantity -->
         <div class="card">
           <div class="mb-4">
-            <h3 class="font-bold text-slate-800 text-sm">Ganancia acumulada vs. Cantidad</h3>
+            <h3 class="font-bold text-slate-800 text-sm">Ingreso vs. Costo por cantidad</h3>
             <p class="text-xs text-slate-400 mt-0.5">
-              Ganancia total según cuántas unidades vendés · Costo base/u:
-              <strong class="text-slate-600">${{ "%.4f"|format(last_result.base_cost_per_unit) }}</strong>
+              La línea punteada es el costo total. La <strong class="text-slate-600">diferencia</strong> entre cada línea y el costo es la ganancia real.
             </p>
           </div>
           <div class="relative h-72">
@@ -1078,7 +1077,7 @@
         }
       });
 
-      // ── Chart 2: líneas de ganancia vs cantidad ────────────────────────
+      // ── Chart 2: ingreso vs costo por cantidad ─────────────────────────
       const profitData = {{ chart_profit | safe }};
       new Chart(document.getElementById('chartProfit').getContext('2d'), {
         type: 'line',
@@ -1094,22 +1093,26 @@
               callbacks: {
                 title: items => `${items[0].label} unidades`,
                 label: ctx => {
-                  const val = ctx.parsed.y;
-                  return val === 0
-                    ? `  ${ctx.dataset.label}: sin ganancia`
-                    : `  ${ctx.dataset.label}: $${val.toFixed(4)}`;
+                  const label = ctx.dataset.label;
+                  const val   = ctx.parsed.y;
+                  // Encontrar el valor de costo base en el mismo punto
+                  const costDataset = profitData.datasets.find(d => d.label === 'Costo base');
+                  const cost = costDataset ? costDataset.data[ctx.dataIndex] : 0;
+                  if (label === 'Costo base') return `  Costo base: $${val.toFixed(2)}`;
+                  const ganancia = val - cost;
+                  return `  ${label}: $${val.toFixed(2)}  (ganancia $${ganancia.toFixed(2)})`;
                 }
               }
             }
           },
           scales: {
             x: {
-              title: { display: true, text: 'Unidades vendidas', color: '#94a3b8', font: { size: 11, family: 'Inter' } },
+              title: { display: true, text: 'Unidades producidas', color: '#94a3b8', font: { size: 11, family: 'Inter' } },
               grid: { color: '#f1f5f9' },
               ticks: { color: '#94a3b8', font: { size: 11 } }
             },
             y: {
-              title: { display: true, text: 'Ganancia total ($)', color: '#94a3b8', font: { size: 11, family: 'Inter' } },
+              title: { display: true, text: 'Total ($)', color: '#94a3b8', font: { size: 11, family: 'Inter' } },
               grid: { color: '#f1f5f9' },
               ticks: { color: '#94a3b8', font: { size: 11 }, callback: v => '$' + v.toFixed(2) }
             }

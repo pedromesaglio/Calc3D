@@ -181,22 +181,39 @@ def build_chart_data(
     }
 
     quantities = list(range(1, 21))
-    colors = ["#94a3b8", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"]
-    profit = {
-        "labels": quantities,
-        "datasets": [
-            {
-                "label": f"×{m}",
-                "data": [round((m - 1) * cost_base * q, 2) for q in quantities],
-                "borderColor": colors[i % len(colors)],
-                "backgroundColor": colors[i % len(colors)] + "18",
-                "tension": 0.3,
-                "fill": False,
-                "borderDash": [5, 4] if m == 1 else [],
-            }
-            for i, m in enumerate(multipliers)
-        ],
+    rev_colors = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"]
+
+    # Línea de referencia: costo base total
+    cost_line = {
+        "label": "Costo base",
+        "data": [round(cost_base * q, 2) for q in quantities],
+        "borderColor": "#94a3b8",
+        "backgroundColor": "transparent",
+        "borderDash": [6, 4],
+        "borderWidth": 2,
+        "tension": 0,
+        "fill": False,
+        "pointRadius": 0,
+        "pointHoverRadius": 4,
+        "order": 99,
     }
+    # Líneas de ingreso por multiplicador
+    revenue_lines = [
+        {
+            "label": f"Ingreso ×{m}",
+            "data": [round(cost_base * m * q, 2) for q in quantities],
+            "borderColor": rev_colors[i % len(rev_colors)],
+            "backgroundColor": rev_colors[i % len(rev_colors)] + "15",
+            "tension": 0.2,
+            "fill": False,
+            "borderWidth": 2,
+            "pointRadius": 0,
+            "pointHoverRadius": 5,
+            "order": i,
+        }
+        for i, m in enumerate(multipliers)
+    ]
+    profit = {"labels": quantities, "datasets": [cost_line] + revenue_lines}
     return {"breakdown": json.dumps(breakdown), "profit": json.dumps(profit)}
 
 
