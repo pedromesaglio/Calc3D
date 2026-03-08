@@ -23,6 +23,7 @@
     <div class="card border-2 border-dashed border-indigo-200 bg-indigo-50/30">
       <p class="text-xs font-bold text-brand-500 uppercase tracking-wide mb-4">Nuevo presupuesto</p>
       <form method="POST" action="/quotes/add">
+        {{ csrf_input(request) }}
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="field-label">Nombre del cliente *</label>
@@ -84,14 +85,10 @@
             {% endif %}
           </td>
           <td>
-            {% if q.status == 'borrador' %}
-            <span class="badge badge-gray">Borrador</span>
-            {% elif q.status == 'enviado' %}
-            <span class="badge badge-blue">Enviado</span>
-            {% elif q.status == 'aprobado' %}
-            <span class="badge badge-green">Aprobado</span>
-            {% elif q.status == 'rechazado' %}
-            <span class="badge badge-red">Rechazado</span>
+            {% if q.status == 'borrador' %}<span class="badge badge-gray">Borrador</span>
+            {% elif q.status == 'enviado' %}<span class="badge badge-blue">Enviado</span>
+            {% elif q.status == 'aprobado' %}<span class="badge badge-green">Aprobado</span>
+            {% elif q.status == 'rechazado' %}<span class="badge badge-red">Rechazado</span>
             {% endif %}
           </td>
           <td class="text-sm" style="color:var(--text-muted);">{{ q.item_count }} ítem{{ 's' if q.item_count != 1 }}</td>
@@ -102,6 +99,7 @@
               <a href="/quotes/{{ q.id }}" class="btn-sm btn-outline">Ver</a>
               <form method="POST" action="/quotes/delete/{{ q.id }}"
                     onsubmit="return confirm('¿Eliminar presupuesto de {{ q.client_name }}?')">
+                {{ csrf_input(request) }}
                 <button type="submit" class="btn-danger-sm">
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
@@ -115,6 +113,19 @@
       </tbody>
     </table>
   </div>
+
+  <!-- Pagination -->
+  {% if pages > 1 %}
+  <div class="flex items-center justify-center gap-3">
+    {% if page > 1 %}
+    <a href="/quotes?page={{ page - 1 }}" class="btn-sm btn-outline">← Anterior</a>
+    {% endif %}
+    <span class="text-sm" style="color:var(--text-faint);">Página {{ page }} de {{ pages }}</span>
+    {% if page < pages %}
+    <a href="/quotes?page={{ page + 1 }}" class="btn-sm btn-outline">Siguiente →</a>
+    {% endif %}
+  </div>
+  {% endif %}
 
   {% else %}
   <div class="card text-center py-16">

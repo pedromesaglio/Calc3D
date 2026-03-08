@@ -1,40 +1,52 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Form, Request
+from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 
 from ..auth import get_current_user
+from ..csrf import csrf_protect
 from ..db import get_db, rows_as_dicts
 from ..services import compute_quote_totals
 
 router = APIRouter()
-templates: Jinja2Templates = None  # injected by create_app
+
+PAGE_SIZE = 20
+
+
+def _t(request: Request):
+    return request.app.state.templates
 
 
 @router.get("/clients", response_class=HTMLResponse)
-async def clients_page(request: Request):
+async def clients_page(request: Request, page: int = 1):
     user = get_current_user(request)
     if not user:
         return RedirectResponse("/login", status_code=303)
+    offset = (page - 1) * PAGE_SIZE
     with get_db() as conn:
+        total = conn.execute(
+            "SELECT COUNT(*) FROM clients WHERE user_id = ?", (user["id"],)
+        ).fetchone()[0]
         clients = rows_as_dicts(conn.execute(
-            "SELECT * FROM clients WHERE user_id = ? ORDER BY name", (user["id"],)).fetchall())
+            "SELECT * FROM clients WHERE user_id = ? ORDER BY name LIMIT ? OFFSET ?",
+            (user["id"], PAGE_SIZE, offset)).fetchall())
         for c in clients:
             row = conn.execute(
                 "SELECT COUNT(*) as total, SUM(CASE WHEN status='aprobado' THEN 1 ELSE 0 END) as approved "
                 "FROM quotes WHERE client_id = ?", (c["id"],)).fetchone()
             c["quote_count"] = row["total"] or 0
             c["approved_count"] = row["approved"] or 0
-    return templates.TemplateResponse("clients.html", {
-        "request": request, "active_tab": "clients",
-        "current_user": user, "clients": clients,
+    pages = max(1, (total + PAGE_SIZE - 1) // PAGE_SIZE)
+    return _t(request).TemplateResponse(request, "clients.html", {
+        "active_tab": "clients", "current_user": user, "clients": clients,
+        "page": page, "pages": pages, "total": total,
     })
 
 
 @router.post("/clients/add")
 async def add_client(
     request: Request,
+    _csrf: None = Depends(csrf_protect),
     name: str = Form(...),
     email: str = Form(""),
     phone: str = Form(""),
@@ -50,6 +62,29 @@ async def add_client(
             "VALUES (?, ?, ?, ?, ?, ?, ?)",
             (user["id"], name.strip(), email.strip(), phone.strip(),
              address.strip(), notes.strip(), datetime.now().strftime("%d/%m/%Y %H:%M")),
+        )
+    return RedirectResponse("/clients", status_code=303)
+
+
+@router.post("/clients/edit/{client_id}")
+async def edit_client(
+    request: Request,
+    client_id: int,
+    _csrf: None = Depends(csrf_protect),
+    name: str = Form(...),
+    email: str = Form(""),
+    phone: str = Form(""),
+    address: str = Form(""),
+    notes: str = Form(""),
+):
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    with get_db() as conn:
+        conn.execute(
+            "UPDATE clients SET name=?, email=?, phone=?, address=?, notes=? WHERE id=? AND user_id=?",
+            (name.strip(), email.strip(), phone.strip(),
+             address.strip(), notes.strip(), client_id, user["id"]),
         )
     return RedirectResponse("/clients", status_code=303)
 
@@ -76,15 +111,18 @@ async def client_detail(request: Request, client_id: int):
     client = dict(client)
     total_quoted = sum(q["total"] for q in quotes)
     total_approved = sum(q["total"] for q in quotes if q["status"] == "aprobado")
-    return templates.TemplateResponse("client_detail.html", {
-        "request": request, "active_tab": "clients",
-        "current_user": user, "client": client, "quotes": quotes,
+    return _t(request).TemplateResponse(request, "client_detail.html", {
+        "active_tab": "clients", "current_user": user, "client": client, "quotes": quotes,
         "total_quoted": round(total_quoted, 2), "total_approved": round(total_approved, 2),
     })
 
 
 @router.post("/clients/delete/{client_id}")
-async def delete_client(request: Request, client_id: int):
+async def delete_client(
+    request: Request,
+    client_id: int,
+    _csrf: None = Depends(csrf_protect),
+):
     user = get_current_user(request)
     if not user:
         return RedirectResponse("/login", status_code=303)

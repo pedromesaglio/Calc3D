@@ -3,7 +3,10 @@ __pycache__/
 *.pyc
 *.pyo
 .env
-calc3d.db
-calc3d.db-wal
-calc3d.db-shm
+*.db
+*.db-wal
+*.db-shm
 data.json
+.pytest_cache/
+.coverage
+htmlcov/

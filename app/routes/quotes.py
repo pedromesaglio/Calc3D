@@ -1,41 +1,54 @@
+import secrets
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Form, Request
+from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 
 from ..auth import get_current_user
+from ..csrf import csrf_protect
 from ..db import get_db, get_user_settings, rows_as_dicts
 from ..services import compute_quote_totals, days_since
 
 router = APIRouter()
-templates: Jinja2Templates = None  # injected by create_app
+
+PAGE_SIZE = 20
+
+
+def _t(request: Request):
+    return request.app.state.templates
 
 
 @router.get("/quotes", response_class=HTMLResponse)
-async def quotes_page(request: Request):
+async def quotes_page(request: Request, page: int = 1):
     user = get_current_user(request)
     if not user:
         return RedirectResponse("/login", status_code=303)
+    offset = (page - 1) * PAGE_SIZE
     with get_db() as conn:
+        total = conn.execute(
+            "SELECT COUNT(*) FROM quotes WHERE user_id = ?", (user["id"],)
+        ).fetchone()[0]
         quotes = rows_as_dicts(conn.execute(
-            "SELECT * FROM quotes WHERE user_id = ? ORDER BY id DESC", (user["id"],)).fetchall())
+            "SELECT * FROM quotes WHERE user_id = ? ORDER BY id DESC LIMIT ? OFFSET ?",
+            (user["id"], PAGE_SIZE, offset)).fetchall())
         for q in quotes:
             row = conn.execute(
                 "SELECT SUM(quantity * unit_price) as total, COUNT(*) as cnt FROM quote_items WHERE quote_id = ?",
                 (q["id"],)).fetchone()
             q["total"] = round(row["total"] or 0, 2)
             q["item_count"] = row["cnt"] or 0
-    return templates.TemplateResponse("quotes.html", {
-        "request": request, "active_tab": "quotes",
-        "current_user": user, "quotes": quotes,
+    pages = max(1, (total + PAGE_SIZE - 1) // PAGE_SIZE)
+    return _t(request).TemplateResponse(request, "quotes.html", {
+        "active_tab": "quotes", "current_user": user, "quotes": quotes,
+        "page": page, "pages": pages, "total": total,
     })
 
 
 @router.post("/quotes/add")
 async def add_quote(
     request: Request,
+    _csrf: None = Depends(csrf_protect),
     client_name: str = Form(...),
     client_id: Optional[int] = Form(None),
     notes: str = Form(""),
@@ -82,9 +95,8 @@ async def quote_detail(request: Request, quote_id: int):
     if quote.get("public_token"):
         public_url = f"{request.base_url}p/{quote['public_token']}"
     days_sent = days_since(quote["created_at"]) if quote["status"] == "enviado" else None
-    return templates.TemplateResponse("quote_detail.html", {
-        "request": request, "active_tab": "quotes",
-        "current_user": user, "quote": quote, "items": items,
+    return _t(request).TemplateResponse(request, "quote_detail.html", {
+        "active_tab": "quotes", "current_user": user, "quote": quote, "items": items,
         "totals": totals, "settings": settings, "clients": clients,
         "public_url": public_url, "days_sent": days_sent,
     })
@@ -94,6 +106,7 @@ async def quote_detail(request: Request, quote_id: int):
 async def add_quote_item(
     request: Request,
     quote_id: int,
+    _csrf: None = Depends(csrf_protect),
     description: str = Form(...),
     quantity: int = Form(...),
     unit_price: float = Form(...),
@@ -113,7 +126,12 @@ async def add_quote_item(
 
 
 @router.post("/quotes/{quote_id}/delete-item/{item_id}")
-async def delete_quote_item(request: Request, quote_id: int, item_id: int):
+async def delete_quote_item(
+    request: Request,
+    quote_id: int,
+    item_id: int,
+    _csrf: None = Depends(csrf_protect),
+):
     user = get_current_user(request)
     if not user:
         return RedirectResponse("/login", status_code=303)
@@ -126,7 +144,12 @@ async def delete_quote_item(request: Request, quote_id: int, item_id: int):
 
 
 @router.post("/quotes/{quote_id}/update-status")
-async def update_quote_status(request: Request, quote_id: int, status: str = Form(...)):
+async def update_quote_status(
+    request: Request,
+    quote_id: int,
+    _csrf: None = Depends(csrf_protect),
+    status: str = Form(...),
+):
     user = get_current_user(request)
     if not user:
         return RedirectResponse("/login", status_code=303)
@@ -145,7 +168,9 @@ async def update_quote_status(request: Request, quote_id: int, status: str = For
 
 @router.post("/quotes/{quote_id}/update-settings")
 async def update_quote_settings(
-    request: Request, quote_id: int,
+    request: Request,
+    quote_id: int,
+    _csrf: None = Depends(csrf_protect),
     client_name: str = Form(...),
     client_id: Optional[int] = Form(None),
     notes: str = Form(""),
@@ -167,8 +192,11 @@ async def update_quote_settings(
 
 
 @router.post("/quotes/{quote_id}/generate-token")
-async def generate_quote_token(request: Request, quote_id: int):
-    import secrets
+async def generate_quote_token(
+    request: Request,
+    quote_id: int,
+    _csrf: None = Depends(csrf_protect),
+):
     user = get_current_user(request)
     if not user:
         return RedirectResponse("/login", status_code=303)
@@ -180,7 +208,11 @@ async def generate_quote_token(request: Request, quote_id: int):
 
 
 @router.post("/quotes/{quote_id}/revoke-token")
-async def revoke_quote_token(request: Request, quote_id: int):
+async def revoke_quote_token(
+    request: Request,
+    quote_id: int,
+    _csrf: None = Depends(csrf_protect),
+):
     user = get_current_user(request)
     if not user:
         return RedirectResponse("/login", status_code=303)
@@ -191,7 +223,11 @@ async def revoke_quote_token(request: Request, quote_id: int):
 
 
 @router.post("/quotes/delete/{quote_id}")
-async def delete_quote(request: Request, quote_id: int):
+async def delete_quote(
+    request: Request,
+    quote_id: int,
+    _csrf: None = Depends(csrf_protect),
+):
     user = get_current_user(request)
     if not user:
         return RedirectResponse("/login", status_code=303)

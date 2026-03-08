@@ -1,4 +1,7 @@
+import re
 import pytest
+
+from tests.conftest import get_csrf
 
 
 class TestAuthRoutes:
@@ -49,7 +52,9 @@ class TestAuthRoutes:
         assert b"no coinciden" in resp.content
 
     def test_logout_clears_session(self, auth_client):
-        resp = auth_client.post("/logout", follow_redirects=False)
+        csrf = get_csrf(auth_client)
+        resp = auth_client.post("/logout", data={"csrf_token": csrf},
+                                follow_redirects=False)
         assert resp.status_code == 303
         # After logout, index should redirect to login
         resp = auth_client.get("/", follow_redirects=False)
@@ -69,6 +74,7 @@ class TestCalculatorRoutes:
         assert b"Calc3D" in resp.content
 
     def test_calculate_returns_result(self, auth_client):
+        csrf = get_csrf(auth_client)
         resp = auth_client.post("/calculate", data={
             "filament_weight": "100",
             "filament_price_kg": "20",
@@ -78,26 +84,31 @@ class TestCalculatorRoutes:
             "other_costs": "0",
             "quantity": "1",
             "multiplier_preset": "2",
+            "csrf_token": csrf,
         })
         assert resp.status_code == 200
         assert b"Resultado" in resp.content or b"result" in resp.content.lower()
 
     def test_add_and_delete_printer(self, auth_client):
+        csrf = get_csrf(auth_client)
         resp = auth_client.post("/printers/add", data={
             "name": "Ender 3",
             "watts": "200",
             "purchase_price": "300",
             "lifespan_years": "5",
+            "csrf_token": csrf,
         }, follow_redirects=False)
         assert resp.status_code == 303
 
     def test_clear_history(self, auth_client):
+        csrf = get_csrf(auth_client)
         auth_client.post("/calculate", data={
             "filament_weight": "50", "filament_price_kg": "20", "print_time": "1",
             "printer_watts": "100", "electricity_rate": "0.15", "other_costs": "0",
-            "quantity": "1", "multiplier_preset": "2",
+            "quantity": "1", "multiplier_preset": "2", "csrf_token": csrf,
         })
-        resp = auth_client.post("/clear-history", follow_redirects=False)
+        resp = auth_client.post("/clear-history", data={"csrf_token": csrf},
+                                follow_redirects=False)
         assert resp.status_code == 303
 
 
@@ -107,9 +118,35 @@ class TestCatalogRoutes:
         assert resp.status_code == 200
 
     def test_add_and_list_piece(self, auth_client):
-        auth_client.post("/catalog/add", data={"name": "Pieza test"})
+        csrf = get_csrf(auth_client)
+        auth_client.post("/catalog/add", data={"name": "Pieza test", "csrf_token": csrf})
         resp = auth_client.get("/catalog")
         assert b"Pieza test" in resp.content
+
+    def test_edit_piece(self, auth_client):
+        csrf = get_csrf(auth_client)
+        auth_client.post("/catalog/add", data={"name": "Original", "csrf_token": csrf})
+        resp = auth_client.get("/catalog")
+        m = re.search(r'/catalog/delete/(\d+)', resp.text)
+        assert m, "Piece ID not found"
+        piece_id = m.group(1)
+        resp = auth_client.post(f"/catalog/edit/{piece_id}",
+                                data={"name": "Editada", "csrf_token": csrf},
+                                follow_redirects=False)
+        assert resp.status_code == 303
+        resp = auth_client.get("/catalog")
+        assert b"Editada" in resp.content
+
+    def test_delete_piece(self, auth_client):
+        csrf = get_csrf(auth_client)
+        auth_client.post("/catalog/add", data={"name": "A borrar", "csrf_token": csrf})
+        resp = auth_client.get("/catalog")
+        m = re.search(r'/catalog/delete/(\d+)', resp.text)
+        assert m, "Delete URL not found"
+        piece_id = m.group(1)
+        resp = auth_client.post(f"/catalog/delete/{piece_id}",
+                                data={"csrf_token": csrf}, follow_redirects=False)
+        assert resp.status_code == 303
 
 
 class TestFilamentRoutes:
@@ -118,12 +155,31 @@ class TestFilamentRoutes:
         assert resp.status_code == 200
 
     def test_add_filament(self, auth_client):
+        csrf = get_csrf(auth_client)
         resp = auth_client.post("/filaments/add", data={
             "brand": "Polymaker",
             "material": "PLA",
             "color": "Black",
             "weight_total_g": "1000",
             "price_per_kg": "22",
+            "csrf_token": csrf,
+        }, follow_redirects=False)
+        assert resp.status_code == 303
+
+    def test_edit_filament(self, auth_client):
+        csrf = get_csrf(auth_client)
+        auth_client.post("/filaments/add", data={
+            "brand": "Bambu", "material": "PLA", "color": "Red",
+            "weight_total_g": "1000", "price_per_kg": "30", "csrf_token": csrf,
+        })
+        resp = auth_client.get("/filaments")
+        m = re.search(r'/filaments/delete/(\d+)', resp.text)
+        assert m, "Filament ID not found"
+        fid = m.group(1)
+        resp = auth_client.post(f"/filaments/edit/{fid}", data={
+            "brand": "Bambu", "material": "PETG", "color": "Red",
+            "weight_total_g": "1000", "weight_remaining_g": "1000",
+            "price_per_kg": "32", "csrf_token": csrf,
         }, follow_redirects=False)
         assert resp.status_code == 303
 
@@ -134,14 +190,16 @@ class TestQuoteRoutes:
         assert resp.status_code == 200
 
     def test_add_quote_redirects_to_detail(self, auth_client):
+        csrf = get_csrf(auth_client)
         resp = auth_client.post("/quotes/add", data={
-            "client_name": "Cliente Test",
+            "client_name": "Cliente Test", "csrf_token": csrf,
         }, follow_redirects=False)
         assert resp.status_code == 303
         assert "/quotes/" in resp.headers["location"]
 
     def test_quote_detail_page(self, auth_client):
-        resp = auth_client.post("/quotes/add", data={"client_name": "Ana"},
+        csrf = get_csrf(auth_client)
+        resp = auth_client.post("/quotes/add", data={"client_name": "Ana", "csrf_token": csrf},
                                 follow_redirects=False)
         quote_url = resp.headers["location"]
         resp = auth_client.get(quote_url)
@@ -149,37 +207,69 @@ class TestQuoteRoutes:
         assert b"Ana" in resp.content
 
     def test_add_item_to_quote(self, auth_client):
-        resp = auth_client.post("/quotes/add", data={"client_name": "Bob"},
+        csrf = get_csrf(auth_client)
+        resp = auth_client.post("/quotes/add", data={"client_name": "Bob", "csrf_token": csrf},
                                 follow_redirects=False)
         quote_url = resp.headers["location"]
         quote_id = quote_url.rstrip("/").split("/")[-1]
 
         resp = auth_client.post(f"/quotes/{quote_id}/add-item", data={
-            "description": "Pieza X", "quantity": "2", "unit_price": "15.0"
+            "description": "Pieza X", "quantity": "2", "unit_price": "15.0",
+            "csrf_token": csrf,
         }, follow_redirects=False)
         assert resp.status_code == 303
 
+    def test_delete_item_from_quote(self, auth_client):
+        csrf = get_csrf(auth_client)
+        resp = auth_client.post("/quotes/add", data={"client_name": "Carl", "csrf_token": csrf},
+                                follow_redirects=False)
+        quote_id = resp.headers["location"].rstrip("/").split("/")[-1]
+        auth_client.post(f"/quotes/{quote_id}/add-item", data={
+            "description": "Pieza Y", "quantity": "1", "unit_price": "10.0",
+            "csrf_token": csrf,
+        })
+        resp = auth_client.get(f"/quotes/{quote_id}")
+        m = re.search(r'/quotes/\d+/delete-item/(\d+)', resp.text)
+        assert m, "Delete item URL not found"
+        item_id = m.group(1)
+        resp = auth_client.post(f"/quotes/{quote_id}/delete-item/{item_id}",
+                                data={"csrf_token": csrf}, follow_redirects=False)
+        assert resp.status_code == 303
+
     def test_update_quote_status(self, auth_client):
-        resp = auth_client.post("/quotes/add", data={"client_name": "Carlo"},
+        csrf = get_csrf(auth_client)
+        resp = auth_client.post("/quotes/add", data={"client_name": "Carlo", "csrf_token": csrf},
                                 follow_redirects=False)
         quote_id = resp.headers["location"].rstrip("/").split("/")[-1]
         resp = auth_client.post(f"/quotes/{quote_id}/update-status",
-                                data={"status": "enviado"}, follow_redirects=False)
+                                data={"status": "enviado", "csrf_token": csrf},
+                                follow_redirects=False)
         assert resp.status_code == 303
 
     def test_generate_and_revoke_token(self, auth_client):
-        resp = auth_client.post("/quotes/add", data={"client_name": "Dana"},
+        csrf = get_csrf(auth_client)
+        resp = auth_client.post("/quotes/add", data={"client_name": "Dana", "csrf_token": csrf},
                                 follow_redirects=False)
         quote_id = resp.headers["location"].rstrip("/").split("/")[-1]
 
-        auth_client.post(f"/quotes/{quote_id}/generate-token", follow_redirects=False)
+        auth_client.post(f"/quotes/{quote_id}/generate-token",
+                         data={"csrf_token": csrf}, follow_redirects=False)
         resp = auth_client.get(f"/quotes/{quote_id}")
         assert b"p/" in resp.content  # public URL shown
 
-        auth_client.post(f"/quotes/{quote_id}/revoke-token", follow_redirects=False)
+        auth_client.post(f"/quotes/{quote_id}/revoke-token",
+                         data={"csrf_token": csrf}, follow_redirects=False)
         resp = auth_client.get(f"/quotes/{quote_id}")
-        # token revoked, no public URL
         assert b"Generar link" in resp.content or b"generate" in resp.content.lower()
+
+    def test_delete_quote(self, auth_client):
+        csrf = get_csrf(auth_client)
+        resp = auth_client.post("/quotes/add", data={"client_name": "Temp", "csrf_token": csrf},
+                                follow_redirects=False)
+        quote_id = resp.headers["location"].rstrip("/").split("/")[-1]
+        resp = auth_client.post(f"/quotes/delete/{quote_id}",
+                                data={"csrf_token": csrf}, follow_redirects=False)
+        assert resp.status_code == 303
 
 
 class TestClientRoutes:
@@ -188,11 +278,35 @@ class TestClientRoutes:
         assert resp.status_code == 200
 
     def test_add_client(self, auth_client):
-        resp = auth_client.post("/clients/add", data={"name": "María"},
+        csrf = get_csrf(auth_client)
+        resp = auth_client.post("/clients/add", data={"name": "María", "csrf_token": csrf},
                                 follow_redirects=False)
         assert resp.status_code == 303
         resp = auth_client.get("/clients")
         assert b"Mar" in resp.content
+
+    def test_edit_client(self, auth_client):
+        csrf = get_csrf(auth_client)
+        auth_client.post("/clients/add", data={"name": "Original Client", "csrf_token": csrf})
+        resp = auth_client.get("/clients")
+        m = re.search(r'/clients/delete/(\d+)', resp.text)
+        assert m, "Client ID not found"
+        cid = m.group(1)
+        resp = auth_client.post(f"/clients/edit/{cid}",
+                                data={"name": "Editado", "csrf_token": csrf},
+                                follow_redirects=False)
+        assert resp.status_code == 303
+
+    def test_delete_client(self, auth_client):
+        csrf = get_csrf(auth_client)
+        auth_client.post("/clients/add", data={"name": "A borrar", "csrf_token": csrf})
+        resp = auth_client.get("/clients")
+        m = re.search(r'/clients/delete/(\d+)', resp.text)
+        assert m, "Delete URL not found"
+        cid = m.group(1)
+        resp = auth_client.post(f"/clients/delete/{cid}",
+                                data={"csrf_token": csrf}, follow_redirects=False)
+        assert resp.status_code == 303
 
 
 class TestDashboardRoutes:
@@ -207,9 +321,11 @@ class TestSettingsRoutes:
         assert resp.status_code == 200
 
     def test_update_settings(self, auth_client):
+        csrf = get_csrf(auth_client)
         resp = auth_client.post("/settings/update", data={
             "business_name": "Mi Negocio",
             "currency": "USD",
+            "csrf_token": csrf,
         }, follow_redirects=False)
         assert resp.status_code == 303
         resp = auth_client.get("/settings")
@@ -222,24 +338,22 @@ class TestPublicQuote:
         assert resp.status_code == 404
 
     def test_public_quote_view(self, auth_client):
-        # Create a quote and generate a public token
-        resp = auth_client.post("/quotes/add", data={"client_name": "Eve"},
+        csrf = get_csrf(auth_client)
+        resp = auth_client.post("/quotes/add", data={"client_name": "Eve", "csrf_token": csrf},
                                 follow_redirects=False)
         quote_id = resp.headers["location"].rstrip("/").split("/")[-1]
         auth_client.post(f"/quotes/{quote_id}/update-status",
-                         data={"status": "enviado"}, follow_redirects=False)
-        auth_client.post(f"/quotes/{quote_id}/generate-token", follow_redirects=False)
+                         data={"status": "enviado", "csrf_token": csrf},
+                         follow_redirects=False)
+        auth_client.post(f"/quotes/{quote_id}/generate-token",
+                         data={"csrf_token": csrf}, follow_redirects=False)
 
-        # Get the token from the detail page
         resp = auth_client.get(f"/quotes/{quote_id}")
-        # Extract token from the page (it appears in the URL /p/<token>)
         content = resp.content.decode()
-        import re
-        match = re.search(r"/p/([A-Za-z0-9_-]+)", content)
-        assert match, "Public URL not found in page"
-        token = match.group(1)
+        m = re.search(r"/p/([A-Za-z0-9_-]+)", content)
+        assert m, "Public URL not found in page"
+        token = m.group(1)
 
-        # Access public page without auth
         resp = auth_client.get(f"/p/{token}")
         assert resp.status_code == 200
         assert b"Eve" in resp.content

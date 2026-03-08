@@ -1,3 +1,4 @@
+import re
 import tempfile
 import os
 import pytest
@@ -29,3 +30,11 @@ def auth_client(app_client):
     })
     app_client.post("/login", data={"username": "testuser", "password": "testpass1"})
     return app_client
+
+
+def get_csrf(client, url="/settings"):
+    """Extract the CSRF token from any authenticated page that renders csrf_input."""
+    resp = client.get(url)
+    m = re.search(r'name="csrf_token" value="([^"]+)"', resp.text)
+    assert m, f"CSRF token not found in {url}"
+    return m.group(1)

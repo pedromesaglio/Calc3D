@@ -2,13 +2,15 @@ from datetime import date, datetime
 
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 
 from ..db import get_db, get_user_settings, rows_as_dicts
 from ..services import compute_quote_totals
 
 router = APIRouter()
-templates: Jinja2Templates = None  # injected by create_app
+
+
+def _t(request: Request):
+    return request.app.state.templates
 
 
 @router.get("/p/{token}", response_class=HTMLResponse)
@@ -29,14 +31,15 @@ async def public_quote_view(request: Request, token: str):
             expired = date.today() > exp
         except Exception:
             pass
-    return templates.TemplateResponse("public_quote.html", {
-        "request": request, "quote": quote, "items": items,
+    return _t(request).TemplateResponse(request, "public_quote.html", {
+        "quote": quote, "items": items,
         "totals": totals, "settings": settings, "expired": expired, "token": token,
     })
 
 
 @router.post("/p/{token}/approve")
 async def public_quote_approve(request: Request, token: str):
+    # No CSRF here: the token in the URL acts as the authorization proof
     with get_db() as conn:
         quote = conn.execute(
             "SELECT id, status, expires_at FROM quotes WHERE public_token = ?", (token,)

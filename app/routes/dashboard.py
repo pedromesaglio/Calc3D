@@ -3,14 +3,16 @@ from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 
 from ..auth import get_current_user
 from ..db import get_db, rows_as_dicts
 from ..services import compute_quote_totals, days_since
 
 router = APIRouter()
-templates: Jinja2Templates = None  # injected by create_app
+
+
+def _t(request: Request):
+    return request.app.state.templates
 
 
 @router.get("/dashboard", response_class=HTMLResponse)
@@ -21,16 +23,14 @@ async def dashboard(request: Request):
     uid = user["id"]
     with get_db() as conn:
         all_quotes = rows_as_dicts(conn.execute(
-            "SELECT q.*, COALESCE(SUM(qi.quantity * qi.unit_price), 0) as subtotal, COUNT(qi.id) as item_count "
-            "FROM quotes q LEFT JOIN quote_items qi ON qi.quote_id = q.id "
-            "WHERE q.user_id = ? GROUP BY q.id ORDER BY q.id DESC",
-            (uid,)).fetchall())
+            "SELECT q.* FROM quotes q WHERE q.user_id = ? ORDER BY q.id DESC", (uid,)).fetchall())
         for q in all_quotes:
             items = rows_as_dicts(conn.execute(
                 "SELECT quantity, unit_price FROM quote_items WHERE quote_id = ?",
                 (q["id"],)).fetchall())
-            t = compute_quote_totals(items, q.get("discount_pct", 0), q.get("surcharge_pct", 0))
-            q["total"] = t["total"]
+            q["total"] = compute_quote_totals(
+                items, q.get("discount_pct", 0), q.get("surcharge_pct", 0))["total"]
+            q["item_count"] = len(items)
 
         history = rows_as_dicts(conn.execute(
             "SELECT * FROM history WHERE user_id = ? ORDER BY id", (uid,)).fetchall())
@@ -51,7 +51,8 @@ async def dashboard(request: Request):
             "ORDER BY (selling_price - base_cost) / selling_price DESC LIMIT 5",
             (uid,)).fetchall())
         for p in pieces:
-            p["margin_pct"] = round((p["selling_price"] - p["base_cost"]) / p["selling_price"] * 100, 1)
+            p["margin_pct"] = round(
+                (p["selling_price"] - p["base_cost"]) / p["selling_price"] * 100, 1)
 
     total_quotes = len(all_quotes)
     sent_quotes = [q for q in all_quotes if q["status"] in ("enviado", "aprobado", "rechazado")]
@@ -73,12 +74,10 @@ async def dashboard(request: Request):
                 monthly[key] += q["total"]
         except Exception:
             pass
-    monthly_labels = []
-    monthly_values = []
+    monthly_labels, monthly_values = [], []
     for k, v in monthly.items():
         try:
-            dt = datetime.strptime(k, "%Y-%m")
-            monthly_labels.append(dt.strftime("%b %Y"))
+            monthly_labels.append(datetime.strptime(k, "%Y-%m").strftime("%b %Y"))
         except Exception:
             monthly_labels.append(k)
         monthly_values.append(round(v, 2))
@@ -89,9 +88,8 @@ async def dashboard(request: Request):
     pending_followup = [q for q in all_quotes
                         if q["status"] == "enviado" and days_since(q["created_at"]) >= 7]
 
-    return templates.TemplateResponse("dashboard.html", {
-        "request": request, "active_tab": "dashboard",
-        "current_user": user,
+    return _t(request).TemplateResponse(request, "dashboard.html", {
+        "active_tab": "dashboard", "current_user": user,
         "total_quotes": total_quotes, "approved_count": len(approved),
         "rejected_count": len(rejected), "conversion": conversion,
         "revenue_total": revenue_total, "avg_margin": avg_margin,

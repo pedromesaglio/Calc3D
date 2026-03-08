@@ -1,16 +1,19 @@
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Form, Request
+from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 
 from ..auth import get_current_user
+from ..csrf import csrf_protect
 from ..db import get_db, rows_as_dicts
 from ..services import build_chart_data
 
 router = APIRouter()
-templates: Jinja2Templates = None  # injected by create_app
+
+
+def _t(request: Request):
+    return request.app.state.templates
 
 
 def _ctx(user: dict, extra: dict = {}) -> dict:
@@ -28,12 +31,13 @@ async def index(request: Request):
     user = get_current_user(request)
     if not user:
         return RedirectResponse("/login", status_code=303)
-    return templates.TemplateResponse("index.html", {"request": request, "active_tab": "calc", **_ctx(user)})
+    return _t(request).TemplateResponse(request, "index.html", {"active_tab": "calc", **_ctx(user)})
 
 
 @router.post("/printers/add")
 async def add_printer(
     request: Request,
+    _csrf: None = Depends(csrf_protect),
     name: str = Form(...),
     watts: float = Form(...),
     purchase_price: float = Form(...),
@@ -54,7 +58,11 @@ async def add_printer(
 
 
 @router.post("/printers/delete/{printer_id}")
-async def delete_printer(request: Request, printer_id: int):
+async def delete_printer(
+    request: Request,
+    printer_id: int,
+    _csrf: None = Depends(csrf_protect),
+):
     user = get_current_user(request)
     if not user:
         return RedirectResponse("/login", status_code=303)
@@ -66,6 +74,7 @@ async def delete_printer(request: Request, printer_id: int):
 @router.post("/calculate", response_class=HTMLResponse)
 async def calculate(
     request: Request,
+    _csrf: None = Depends(csrf_protect),
     filament_weight: float = Form(...),
     filament_price_kg: float = Form(...),
     print_time: float = Form(...),
@@ -157,10 +166,9 @@ async def calculate(
         depreciation_cost, other_costs, multiplier,
     )
 
-    return templates.TemplateResponse(
-        "index.html",
+    return _t(request).TemplateResponse(
+        request, "index.html",
         {
-            "request": request,
             "active_tab": "calc",
             "last_result": last_result,
             "chart_breakdown": charts["breakdown"],
@@ -171,7 +179,10 @@ async def calculate(
 
 
 @router.post("/clear-history")
-async def clear_history(request: Request):
+async def clear_history(
+    request: Request,
+    _csrf: None = Depends(csrf_protect),
+):
     user = get_current_user(request)
     if not user:
         return RedirectResponse("/login", status_code=303)
