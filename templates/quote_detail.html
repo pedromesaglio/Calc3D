@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+{% block title %}Presupuesto #{{ quote.id }} — Calc3D{% endblock %}
+
+{% block extra_styles %}
+@media print {
+  header, nav, footer, .no-print { display: none !important; }
+  body { background: white !important; color: #1e293b !important; }
+  .card { box-shadow: none !important; border: 1px solid #e2e8f0 !important; }
+  main { padding: 0 !important; max-width: 100% !important; }
+}
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Top bar -->
+  <div class="flex items-center justify-between flex-wrap gap-3">
+    <div class="flex items-center gap-3">
+      <a href="/quotes" class="btn-sm btn-outline no-print">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        Volver
+      </a>
+      <div>
+        <h2 class="text-xl font-extrabold tracking-tight" style="color:var(--text);">Presupuesto #{{ quote.id }}</h2>
+        <p class="text-sm" style="color:var(--text-faint);">{{ quote.client_name }} &mdash; {{ quote.created_at }}</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2 flex-wrap no-print">
+      <!-- Status selector -->
+      <form method="POST" action="/quotes/{{ quote.id }}/update-status">
+        <div class="select-wrap">
+          <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <select class="select" name="status" onchange="this.form.submit()" style="padding-left:2.25rem;">
+            <option value="borrador"  {{ 'selected' if quote.status == 'borrador' }}>Borrador</option>
+            <option value="enviado"   {{ 'selected' if quote.status == 'enviado' }}>Enviado</option>
+            <option value="aprobado"  {{ 'selected' if quote.status == 'aprobado' }}>Aprobado</option>
+            <option value="rechazado" {{ 'selected' if quote.status == 'rechazado' }}>Rechazado</option>
+          </select>
+        </div>
+      </form>
+      <button onclick="window.print()" class="btn-sm btn-outline">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+        </svg>
+        Imprimir
+      </button>
+    </div>
+  </div>
+
+  <!-- Follow-up warning -->
+  {% if days_sent is not none and days_sent >= 7 %}
+  <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex items-center gap-3 no-print">
+    <svg class="w-5 h-5 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+      <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+    </svg>
+    <p class="text-sm font-semibold text-amber-700">
+      Este presupuesto fue enviado hace <strong>{{ days_sent }} días</strong> sin respuesta. Considerá hacer un seguimiento.
+    </p>
+  </div>
+  {% endif %}
+
+  <!-- Quote header card -->
+  <div class="card">
+    {% if settings.business_name %}
+    <div class="mb-4 pb-4" style="border-bottom:1px solid var(--border);">
+      <p class="font-extrabold text-lg text-brand-600">{{ settings.business_name }}</p>
+      {% if settings.business_tagline %}<p class="text-sm" style="color:var(--text-faint);">{{ settings.business_tagline }}</p>{% endif %}
+      <div class="flex flex-wrap gap-x-4 gap-y-0.5 mt-1 text-xs" style="color:var(--text-muted);">
+        {% if settings.business_email %}<span>{{ settings.business_email }}</span>{% endif %}
+        {% if settings.business_phone %}<span>{{ settings.business_phone }}</span>{% endif %}
+        {% if settings.business_address %}<span>{{ settings.business_address }}</span>{% endif %}
+      </div>
+    </div>
+    {% endif %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div>
+        <p class="field-label">Cliente</p>
+        <p class="font-bold" style="color:var(--text);">{{ quote.client_name }}</p>
+      </div>
+      <div>
+        <p class="field-label">Estado</p>
+        {% if quote.status == 'borrador' %}<span class="badge badge-gray">Borrador</span>
+        {% elif quote.status == 'enviado' %}<span class="badge badge-blue">Enviado</span>
+        {% elif quote.status == 'aprobado' %}<span class="badge badge-green">Aprobado</span>
+        {% elif quote.status == 'rechazado' %}<span class="badge badge-red">Rechazado</span>{% endif %}
+        {% if quote.approved_at %}<p class="text-xs mt-1 text-emerald-600">{{ quote.approved_at }}</p>{% endif %}
+      </div>
+      <div>
+        <p class="field-label">Fecha</p>
+        <p class="font-semibold" style="color:var(--text);">{{ quote.created_at }}</p>
+      </div>
+      {% if quote.expires_at %}
+      <div>
+        <p class="field-label">Válido hasta</p>
+        <p class="font-semibold" style="color:var(--text);">{{ quote.expires_at }}</p>
+      </div>
+      {% endif %}
+      {% if quote.notes %}
+      <div class="sm:col-span-2 lg:col-span-4">
+        <p class="field-label">Notas</p>
+        <p class="text-sm" style="color:var(--text-muted);">{{ quote.notes }}</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Items table -->
+  <div class="card overflow-hidden p-0">
+    <div class="px-5 py-4 flex items-center justify-between" style="border-bottom:1px solid var(--border);">
+      <h3 class="font-bold text-sm" style="color:var(--text);">Ítems del presupuesto</h3>
+      <span class="text-xs font-semibold" style="color:var(--text-faint);">{{ items|length }} ítem{{ 's' if items|length != 1 }}</span>
+    </div>
+
+    {% if items %}
+    <table class="tbl w-full text-left">
+      <thead>
+        <tr>
+          <th class="w-full">Descripción</th>
+          <th class="text-right">Cant.</th>
+          <th class="text-right">Precio unit.</th>
+          <th class="text-right">Subtotal</th>
+          <th class="no-print"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td style="color:var(--text);">{{ item.description }}</td>
+          <td class="text-right font-mono text-sm" style="color:var(--text-muted);">{{ item.quantity }}</td>
+          <td class="text-right font-mono text-sm" style="color:var(--text-muted);">{{ settings.currency }}{{ "%.2f"|format(item.unit_price) }}</td>
+          <td class="text-right font-mono font-bold text-emerald-600">{{ settings.currency }}{{ "%.2f"|format(item.quantity * item.unit_price) }}</td>
+          <td class="text-right no-print">
+            <form method="POST" action="/quotes/{{ quote.id }}/delete-item/{{ item.id }}"
+                  onsubmit="return confirm('¿Eliminar este ítem?')">
+              <button type="submit" class="btn-danger-sm">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3" class="text-right text-sm pr-4 py-2.5" style="color:var(--text-muted); border-top:1px solid var(--border);">Subtotal</td>
+          <td class="text-right font-mono font-semibold py-2.5" style="color:var(--text); border-top:1px solid var(--border);">{{ settings.currency }}{{ "%.2f"|format(totals.subtotal) }}</td>
+          <td class="no-print" style="border-top:1px solid var(--border);"></td>
+        </tr>
+        {% if totals.surcharge_amt > 0 %}
+        <tr>
+          <td colspan="3" class="text-right text-sm pr-4 py-1.5" style="color:var(--text-muted);">Recargo ({{ quote.surcharge_pct }}%)</td>
+          <td class="text-right font-mono text-sm py-1.5" style="color:var(--text);">+ {{ settings.currency }}{{ "%.2f"|format(totals.surcharge_amt) }}</td>
+          <td class="no-print"></td>
+        </tr>
+        {% endif %}
+        {% if totals.discount_amt > 0 %}
+        <tr>
+          <td colspan="3" class="text-right text-sm pr-4 py-1.5" style="color:var(--text-muted);">Descuento ({{ quote.discount_pct }}%)</td>
+          <td class="text-right font-mono text-sm py-1.5 text-emerald-600">- {{ settings.currency }}{{ "%.2f"|format(totals.discount_amt) }}</td>
+          <td class="no-print"></td>
+        </tr>
+        {% endif %}
+        <tr>
+          <td colspan="3" class="text-right font-bold text-sm pr-4 py-3" style="color:var(--text-muted); border-top:2px solid var(--border);">TOTAL</td>
+          <td class="text-right font-extrabold text-lg text-emerald-600 py-3" style="border-top:2px solid var(--border);">{{ settings.currency }}{{ "%.2f"|format(totals.total) }}</td>
+          <td class="no-print" style="border-top:2px solid var(--border);"></td>
+        </tr>
+      </tfoot>
+    </table>
+    {% else %}
+    <div class="text-center py-10">
+      <p class="font-medium" style="color:var(--text-muted);">No hay ítems todavía</p>
+      <p class="text-sm mt-1" style="color:var(--text-faint);">Agregá los productos o servicios a cotizar</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Terms -->
+  {% if quote.terms %}
+  <div class="card">
+    <p class="field-label mb-2">Términos y condiciones</p>
+    <p class="text-sm" style="color:var(--text-muted);">{{ quote.terms }}</p>
+  </div>
+  {% endif %}
+
+  <!-- Actions: add item + settings + public link -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 no-print">
+
+    <!-- Add item -->
+    {% if quote.status in ('borrador', 'enviado') %}
+    <div class="card">
+      <p class="text-xs font-bold text-brand-500 uppercase tracking-wide mb-4">Agregar ítem</p>
+      <form method="POST" action="/quotes/{{ quote.id }}/add-item" class="space-y-3">
+        <div>
+          <label class="field-label">Descripción *</label>
+          <div class="input-wrap">
+            <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7"/>
+            </svg>
+            <input class="input" type="text" name="description" placeholder="Ej: Soporte pared × 2 colores" required />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="field-label">Cantidad *</label>
+            <div class="input-wrap">
+              <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/>
+              </svg>
+              <input class="input" type="number" name="quantity" min="1" value="1" required />
+            </div>
+          </div>
+          <div>
+            <label class="field-label">Precio unit. *</label>
+            <div class="input-wrap">
+              <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <input class="input" type="number" name="unit_price" step="0.01" min="0" placeholder="0.00" required />
+            </div>
+          </div>
+        </div>
+        <div class="flex justify-end">
+          <button type="submit" class="btn-primary">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+            </svg>
+            Agregar
+          </button>
+        </div>
+      </form>
+    </div>
+    {% endif %}
+
+    <!-- Settings + Public link column -->
+    <div class="space-y-4">
+
+      <!-- Public link -->
+      <div class="card">
+        <p class="text-xs font-bold text-brand-500 uppercase tracking-wide mb-3">Link público para el cliente</p>
+        {% if public_url %}
+        <div class="rounded-lg border p-3 flex items-center gap-2 mb-3" style="background:var(--bg-muted);border-color:var(--border);">
+          <svg class="w-4 h-4 text-emerald-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clip-rule="evenodd"/>
+          </svg>
+          <span class="text-xs font-mono truncate flex-1" style="color:var(--text-muted);" id="pubUrl">{{ public_url }}</span>
+          <button type="button" onclick="copyUrl()" class="btn-sm btn-outline flex-shrink-0" title="Copiar">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+            </svg>
+            Copiar
+          </button>
+        </div>
+        <div class="flex gap-2">
+          <a href="{{ public_url }}" target="_blank" class="btn-sm btn-outline">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+            </svg>
+            Ver como cliente
+          </a>
+          <form method="POST" action="/quotes/{{ quote.id }}/revoke-token" onsubmit="return confirm('¿Desactivar el link? El cliente no podrá acceder más.')">
+            <button type="submit" class="btn-sm btn-outline" style="color:#ef4444;border-color:#fca5a5;">Desactivar</button>
+          </form>
+        </div>
+        {% else %}
+        <p class="text-xs mb-3" style="color:var(--text-faint);">Generá un link único para que el cliente vea el presupuesto y lo apruebe sin necesidad de login.</p>
+        <form method="POST" action="/quotes/{{ quote.id }}/generate-token">
+          <button type="submit" class="btn-primary">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+            </svg>
+            Generar link público
+          </button>
+        </form>
+        {% endif %}
+      </div>
+
+      <!-- Quote settings (discount, surcharge, expiry, terms) -->
+      <div class="card">
+        <button type="button" onclick="toggleSettings()" class="flex items-center justify-between w-full">
+          <p class="text-xs font-bold text-brand-500 uppercase tracking-wide">Configuración del presupuesto</p>
+          <svg id="settingsChevron" class="w-4 h-4 transition-transform" style="color:var(--text-faint);" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </button>
+        <div id="settingsForm" class="hidden mt-4">
+          <form method="POST" action="/quotes/{{ quote.id }}/update-settings" class="space-y-3">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="field-label">Descuento (%)</label>
+                <div class="input-wrap">
+                  <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/>
+                  </svg>
+                  <input class="input" type="number" name="discount_pct" step="0.5" min="0" max="100"
+                         value="{{ quote.discount_pct or 0 }}" placeholder="0" />
+                </div>
+              </div>
+              <div>
+                <label class="field-label">Recargo (%)</label>
+                <div class="input-wrap">
+                  <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  <input class="input" type="number" name="surcharge_pct" step="0.5" min="0"
+                         value="{{ quote.surcharge_pct or 0 }}" placeholder="0" />
+                </div>
+              </div>
+            </div>
+            <div>
+              <label class="field-label">Válido hasta</label>
+              <div class="input-wrap">
+                <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                <input class="input" type="date" name="expires_at"
+                       value="{{ quote.expires_at or '' }}" />
+              </div>
+            </div>
+            <input type="hidden" name="client_name" value="{{ quote.client_name }}" />
+            <input type="hidden" name="notes" value="{{ quote.notes or '' }}" />
+            <div>
+              <label class="field-label">Términos y condiciones</label>
+              <textarea name="terms" rows="3"
+                        class="input input-no-icon w-full resize-none"
+                        style="height:auto; padding:.6rem .75rem;"
+                        placeholder="Términos del presupuesto…">{{ quote.terms or '' }}</textarea>
+            </div>
+            <div class="flex justify-end">
+              <button type="submit" class="btn-primary">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                </svg>
+                Guardar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function copyUrl() {
+    const url = document.getElementById('pubUrl').textContent.trim();
+    navigator.clipboard.writeText(url).then(() => {
+      const btn = event.target.closest('button');
+      const orig = btn.innerHTML;
+      btn.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> Copiado';
+      setTimeout(() => btn.innerHTML = orig, 2000);
+    });
+  }
+  function toggleSettings() {
+    const form = document.getElementById('settingsForm');
+    const chevron = document.getElementById('settingsChevron');
+    form.classList.toggle('hidden');
+    chevron.style.transform = form.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+  }
+</script>
+{% endblock %}

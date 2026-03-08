@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Calc3D{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div>
+    <h2 class="text-xl font-extrabold tracking-tight" style="color:var(--text);">Dashboard de rentabilidad</h2>
+    <p class="text-sm mt-0.5" style="color:var(--text-faint);">Resumen de tu negocio de impresión 3D</p>
+  </div>
+
+  <!-- KPI row -->
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+
+    <div class="stat stat-green lg:col-span-2">
+      <div class="stat-icon bg-emerald-50">
+        <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"/>
+        </svg>
+      </div>
+      <span class="stat-label text-emerald-600">Ingresos aprobados</span>
+      <span class="stat-value text-emerald-700" style="font-size:1.4rem;">${{ "%.2f"|format(revenue_total) }}</span>
+    </div>
+
+    <div class="stat stat-indigo">
+      <div class="stat-icon bg-indigo-50">
+        <svg class="w-4 h-4 text-brand-500" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/>
+        </svg>
+      </div>
+      <span class="stat-label text-brand-500">Presupuestos</span>
+      <span class="stat-value text-brand-700">{{ total_quotes }}</span>
+      <span class="text-xs" style="color:var(--text-faint);">{{ approved_count }} aprobados</span>
+    </div>
+
+    <div class="stat {{ 'stat-green' if conversion >= 50 else 'stat-amber' if conversion >= 25 else 'stat-gray' }}">
+      <div class="stat-icon {{ 'bg-emerald-50' if conversion >= 50 else 'bg-amber-50' if conversion >= 25 else 'bg-slate-100' }}">
+        <svg class="w-4 h-4 {{ 'text-emerald-600' if conversion >= 50 else 'text-amber-500' if conversion >= 25 else 'text-slate-400' }}" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+        </svg>
+      </div>
+      <span class="stat-label {{ 'text-emerald-600' if conversion >= 50 else 'text-amber-500' if conversion >= 25 else 'text-slate-400' }}">Conversión</span>
+      <span class="stat-value {{ 'text-emerald-700' if conversion >= 50 else 'text-amber-600' if conversion >= 25 else 'text-slate-500' }}">{{ conversion }}%</span>
+    </div>
+
+    <div class="stat stat-amber">
+      <div class="stat-icon bg-amber-50">
+        <svg class="w-4 h-4 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>
+        </svg>
+      </div>
+      <span class="stat-label text-amber-600">Margen prom.</span>
+      <span class="stat-value text-amber-700">{{ avg_margin }}%</span>
+      <span class="text-xs" style="color:var(--text-faint);">de la calculadora</span>
+    </div>
+
+  </div>
+
+  <!-- Follow-up alert -->
+  {% if pending_followup %}
+  <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex items-start gap-3">
+    <svg class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+      <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+    </svg>
+    <div class="flex-1">
+      <p class="text-sm font-bold text-amber-700">{{ pending_followup|length }} presupuesto{{ 's' if pending_followup|length != 1 }} sin respuesta hace más de 7 días</p>
+      <div class="flex flex-wrap gap-2 mt-1.5">
+        {% for q in pending_followup %}
+        <a href="/quotes/{{ q.id }}" class="text-xs font-semibold text-amber-700 underline hover:text-amber-900">
+          #{{ q.id }} {{ q.client_name }} ({{ days_since(q.created_at) }}d)
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Revenue chart + Recent quotes -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+    <!-- Monthly revenue chart -->
+    <div class="card lg:col-span-2">
+      <div class="mb-4">
+        <h3 class="font-bold text-sm" style="color:var(--text);">Ingresos mensuales (últimos 6 meses)</h3>
+        <p class="text-xs mt-0.5" style="color:var(--text-faint);">Presupuestos aprobados por mes</p>
+      </div>
+      <div class="relative h-56">
+        <canvas id="chartRevenue"></canvas>
+      </div>
+    </div>
+
+    <!-- Recent quotes -->
+    <div class="card">
+      <h3 class="font-bold text-sm mb-4" style="color:var(--text);">Últimos presupuestos</h3>
+      {% if recent_quotes %}
+      <div class="space-y-2">
+        {% for q in recent_quotes %}
+        <a href="/quotes/{{ q.id }}" class="flex items-center justify-between p-2.5 rounded-lg hover:bg-opacity-50 transition"
+           style="background:var(--bg-muted);">
+          <div class="min-w-0">
+            <p class="text-xs font-semibold truncate" style="color:var(--text);">{{ q.client_name }}</p>
+            <p class="text-xs" style="color:var(--text-faint);">{{ q.created_at }}</p>
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0 ml-2">
+            <span class="font-bold text-xs text-emerald-600">${{ "%.2f"|format(q.total) }}</span>
+            {% if q.status == 'borrador' %}<span class="badge badge-gray">Bor.</span>
+            {% elif q.status == 'enviado' %}<span class="badge badge-blue">Env.</span>
+            {% elif q.status == 'aprobado' %}<span class="badge badge-green">Apr.</span>
+            {% elif q.status == 'rechazado' %}<span class="badge badge-red">Rec.</span>{% endif %}
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      <a href="/quotes" class="block text-center text-xs font-semibold text-brand-500 mt-3 hover:underline">
+        Ver todos →
+      </a>
+      {% else %}
+      <p class="text-sm text-center py-6" style="color:var(--text-faint);">Aún no hay presupuestos</p>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <!-- Break-even + Top pieces -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+    <!-- Printer break-even -->
+    <div class="card">
+      <h3 class="font-bold text-sm mb-4" style="color:var(--text);">Recuperación de impresoras</h3>
+      {% if printers %}
+      <div class="space-y-4">
+        {% for p in printers %}
+        <div>
+          <div class="flex justify-between items-baseline mb-1">
+            <span class="text-xs font-bold" style="color:var(--text);">{{ p.name }}</span>
+            <span class="text-xs" style="color:var(--text-faint);">{{ p.hours_printed }}h / {{ "%.0f"|format(p.lifespan_hours) }}h</span>
+          </div>
+          <div class="w-full rounded-full h-2.5 mb-1" style="background:var(--bg-muted);">
+            <div class="h-2.5 rounded-full" style="width:{{ [p.pct_lifespan, 100]|min }}%; background:linear-gradient(90deg,#6366f1,#8b5cf6);"></div>
+          </div>
+          <div class="flex justify-between text-xs">
+            <span class="text-emerald-600 font-semibold">Recuperado: ${{ "%.2f"|format(p.cost_recovered) }}</span>
+            <span style="color:var(--text-faint);">Restante: ${{ "%.2f"|format([p.cost_remaining, 0]|max) }}</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="text-center py-8">
+        <p class="text-sm" style="color:var(--text-faint);">Agregá impresoras en la Calculadora para ver su recuperación</p>
+        <a href="/" class="text-xs font-semibold text-brand-500 mt-2 inline-block hover:underline">Ir a Calculadora →</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Top pieces by margin -->
+    <div class="card">
+      <h3 class="font-bold text-sm mb-4" style="color:var(--text);">Piezas más rentables</h3>
+      {% if pieces %}
+      <div class="space-y-3">
+        {% for p in pieces %}
+        <div class="flex items-center gap-3">
+          <div class="flex-1 min-w-0">
+            <div class="flex justify-between items-baseline mb-0.5">
+              <span class="text-xs font-semibold truncate" style="color:var(--text);">{{ p.name }}</span>
+              <span class="text-xs font-bold text-amber-600 ml-2 flex-shrink-0">{{ p.margin_pct }}%</span>
+            </div>
+            <div class="w-full rounded-full h-1.5" style="background:var(--bg-muted);">
+              <div class="h-1.5 rounded-full bg-amber-400" style="width:{{ [p.margin_pct, 100]|min }}%;"></div>
+            </div>
+            <div class="flex justify-between text-xs mt-0.5">
+              <span style="color:var(--text-faint);">Costo: ${{ "%.2f"|format(p.base_cost) }}</span>
+              <span class="text-emerald-600">Venta: ${{ "%.2f"|format(p.selling_price) }}</span>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <a href="/catalog" class="block text-center text-xs font-semibold text-brand-500 mt-3 hover:underline">
+        Ver catálogo completo →
+      </a>
+      {% else %}
+      <div class="text-center py-8">
+        <p class="text-sm" style="color:var(--text-faint);">Agregá piezas al catálogo con costo y precio de venta</p>
+        <a href="/catalog" class="text-xs font-semibold text-brand-500 mt-2 inline-block hover:underline">Ir a Catálogo →</a>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function() {
+  const labels = {{ monthly_labels | safe }};
+  const values = {{ monthly_values | safe }};
+  const isDark = document.documentElement.classList.contains('dark');
+  const gridColor = isDark ? '#334155' : '#f1f5f9';
+  const tickColor = isDark ? '#64748b' : '#94a3b8';
+
+  new Chart(document.getElementById('chartRevenue').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Ingresos aprobados ($)',
+        data: values,
+        backgroundColor: 'rgba(99,102,241,.75)',
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1e293b', titleColor: '#94a3b8', bodyColor: '#f1f5f9',
+          borderColor: '#334155', borderWidth: 1, padding: 10, cornerRadius: 8,
+          callbacks: { label: ctx => `  $${ctx.parsed.y.toFixed(2)}` }
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: tickColor, font: { size: 11, family: 'Inter' } } },
+        y: {
+          grid: { color: gridColor },
+          ticks: { color: tickColor, font: { size: 11 }, callback: v => '$' + v.toFixed(0) }
+        }
+      }
+    }
+  });
+})();
+</script>
+{% endblock %}
