@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Mi Suscripción - Calc3D{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <h1 class="text-3xl font-bold mb-6">Mi Suscripción</h1>
+
+  <!-- Current Plan Card -->
+  <div class="card mb-6">
+    <div class="flex items-start justify-between mb-4">
+      <div>
+        <h2 class="text-xl font-bold">Plan {{ plan_info.plan.name }}</h2>
+        <p class="text-sm mt-1" style="color: var(--text-muted);">
+          {% if plan_info.plan.price > 0 %}
+            ${{ plan_info.plan.price }} {{ plan_info.plan.currency }}/mes
+          {% else %}
+            Gratuito
+          {% endif %}
+        </p>
+      </div>
+      <span class="badge badge-{% if plan_info.subscription.status == 'active' %}green{% elif plan_info.subscription.status == 'trialing' %}blue{% elif plan_info.subscription.status == 'past_due' %}amber{% else %}gray{% endif %}">
+        {{ plan_info.subscription.status }}
+      </span>
+    </div>
+
+    {% if plan_info.can_upgrade %}
+    <div class="flex gap-3">
+      <a href="/pricing" class="btn-primary">
+        Actualizar Plan
+      </a>
+      {% if plan_info.subscription.payment_provider == 'stripe' and stripe_configured %}
+      <form method="POST" action="/subscription/portal">
+        {{ csrf_input(request) }}
+        <button type="submit" class="btn-sm btn-outline">
+          Gestionar Facturación
+        </button>
+      </form>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Usage Stats -->
+  <div class="card mb-6">
+    <h3 class="text-lg font-bold mb-4">Uso del Plan</h3>
+    <div class="grid grid-cols-2 gap-4">
+      {% for resource, label in [('calculations', 'Cálculos'), ('quotes', 'Presupuestos'), ('clients', 'Clientes'), ('catalog_items', 'Piezas en Catálogo')] %}
+      <div>
+        <div class="flex justify-between items-center mb-1">
+          <span class="text-sm font-medium">{{ label }}</span>
+          <span class="text-xs" style="color: var(--text-muted);">
+            {{ plan_info.usage[resource ~ '_used'] }} /
+            {% if plan_info.plan[resource ~ '_limit'] == -1 %}∞{% else %}{{ plan_info.plan[resource ~ '_limit'] }}{% endif %}
+          </span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
+          {% set percentage = plan_info.usage_percentages[resource] %}
+          <div class="h-2 rounded-full {% if percentage >= 90 %}bg-red-500{% elif percentage >= 70 %}bg-amber-500{% else %}bg-green-500{% endif %}" style="width: {% if plan_info.plan[resource ~ '_limit'] == -1 %}0{% else %}{{ percentage }}{% endif %}%"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="text-xs mt-3" style="color: var(--text-faint);">
+      Se reinicia el {{ plan_info.usage.reset_at[:10] }}
+    </p>
+  </div>
+
+  <!-- Payment History -->
+  <div class="card">
+    <h3 class="text-lg font-bold mb-4">Historial de Pagos</h3>
+    {% if payments %}
+    <div class="overflow-x-auto">
+      <table class="tbl w-full">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Monto</th>
+            <th>Estado</th>
+            <th>Proveedor</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for payment in payments %}
+          <tr>
+            <td>{{ payment.created_at[:10] }}</td>
+            <td>{{ payment.currency }} ${{ "%.2f"|format(payment.amount) }}</td>
+            <td>
+              <span class="badge badge-{% if payment.status == 'succeeded' %}green{% elif payment.status == 'pending' %}amber{% else %}red{% endif %}">
+                {{ payment.status }}
+              </span>
+            </td>
+            <td>{{ payment.payment_provider }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-sm" style="color: var(--text-muted);">No hay pagos registrados aún.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

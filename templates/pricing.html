@@ -1,0 +1,389 @@
+{% extends "base.html" %}
+
+{% block title %}Planes y Precios - Calc3D{% endblock %}
+
+{% block extra_styles %}
+<style>
+  .pricing-card {
+    border: 1px solid var(--border);
+    border-radius: 1.5rem;
+    padding: 2.5rem;
+    background: var(--bg-card);
+    transition: all .3s cubic-bezier(.4,0,.2,1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / .05), 0 2px 4px -2px rgb(0 0 0 / .05);
+  }
+  .pricing-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / .1), 0 10px 10px -5px rgb(0 0 0 / .04);
+    border-color: #6366f1;
+  }
+  .pricing-card.featured {
+    border-color: #6366f1;
+    border-width: 2px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.03), rgba(139, 92, 246, 0.03));
+    box-shadow: 0 10px 15px -3px rgb(99 102 241 / .1), 0 4px 6px -4px rgb(99 102 241 / .1);
+  }
+  .pricing-card.featured::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899);
+  }
+  .plan-badge {
+    display: inline-block;
+    padding: .375rem 1rem;
+    border-radius: 9999px;
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 4px 12px rgb(99 102 241 / .3);
+  }
+  .check-icon {
+    flex-shrink: 0;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgb(16 185 129 / .2);
+  }
+  .feature-item {
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
+    font-size: .875rem;
+    color: var(--text);
+    margin-bottom: .875rem;
+    padding: .25rem 0;
+  }
+  .price-amount {
+    font-size: 3.5rem;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -.04em;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+  <!-- Header -->
+  <div class="text-center mb-12">
+    <h1 class="text-4xl font-extrabold mb-4" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+      Planes y Precios
+    </h1>
+    <p class="text-lg" style="color: var(--text-muted);">
+      Elige el plan perfecto para tu negocio de impresión 3D
+    </p>
+  </div>
+
+  {% if error %}
+  <div class="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 dark:bg-red-900/20 dark:border-red-800">
+    <p class="text-red-800 dark:text-red-200 text-sm font-semibold">{{ error }}</p>
+  </div>
+  {% endif %}
+
+  <!-- Plans Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+    <!-- Free Plan -->
+    <div class="pricing-card">
+      <div class="mb-6">
+        <h3 class="text-xl font-bold mb-2">Gratuito</h3>
+        <div class="flex items-baseline gap-2">
+          <span class="price-amount">$0</span>
+          <span style="color: var(--text-muted); font-size: .875rem;">/mes</span>
+        </div>
+        <p class="mt-3 text-sm" style="color: var(--text-muted);">
+          Perfecto para comenzar y probar la plataforma
+        </p>
+      </div>
+
+      <div class="mb-6">
+        <div class="feature-item">
+          <div class="check-icon">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <span><strong>20</strong> cálculos por mes</span>
+        </div>
+        <div class="feature-item">
+          <div class="check-icon">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <span><strong>5</strong> presupuestos</span>
+        </div>
+        <div class="feature-item">
+          <div class="check-icon">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <span><strong>5</strong> clientes</span>
+        </div>
+        <div class="feature-item">
+          <div class="check-icon">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <span><strong>10</strong> piezas en catálogo</span>
+        </div>
+      </div>
+
+      {% if user and user.plan_info.subscription.plan == 'free' %}
+      <button class="btn-primary w-full opacity-50 cursor-not-allowed" disabled>
+        Plan Actual
+      </button>
+      {% elif user %}
+      <p class="text-center text-sm" style="color: var(--text-muted);">Tu plan actual</p>
+      {% else %}
+      <a href="/register" class="btn-primary w-full text-center">
+        Comenzar Gratis
+      </a>
+      {% endif %}
+    </div>
+
+    <!-- Pro Plan -->
+    <div class="pricing-card featured">
+      <span class="plan-badge">Más Popular</span>
+
+      <div class="mb-6">
+        <h3 class="text-xl font-bold mb-2">Profesional</h3>
+        <div class="flex items-baseline gap-2">
+          <span class="price-amount">$9.99</span>
+          <span style="color: var(--text-muted); font-size: .875rem;">/mes</span>
+        </div>
+        <p class="mt-3 text-sm" style="color: var(--text-muted);">
+          Ideal para profesionales y pequeños negocios
+        </p>
+      </div>
+
+      <div class="mb-6">
+        <div class="feature-item">
+          <div class="check-icon">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <span><strong>Cálculos ilimitados</strong></span>
+        </div>
+        <div class="feature-item">
+          <div class="check-icon">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <span><strong>100</strong> presupuestos</span>
+        </div>
+        <div class="feature-item">
+          <div class="check-icon">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <span><strong>50</strong> clientes</span>
+        </div>
+        <div class="feature-item">
+          <div class="check-icon">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <span><strong>100</strong> piezas en catálogo</span>
+        </div>
+        <div class="feature-item">
+          <div class="check-icon">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <span>Exportación a PDF</span>
+        </div>
+        <div class="feature-item">
+          <div class="check-icon">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <span>Envío de presupuestos por email</span>
+        </div>
+        <div class="feature-item">
+          <div class="check-icon">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <span>Análisis y estadísticas</span>
+        </div>
+      </div>
+
+      {% if user and user.plan_info.subscription.plan == 'pro' %}
+      <button class="btn-primary w-full opacity-50 cursor-not-allowed" disabled>
+        Plan Actual
+      </button>
+      {% elif user %}
+      <a href="/subscription/checkout/pro" class="btn-primary w-full text-center">
+        Actualizar a Pro
+      </a>
+      {% else %}
+      <a href="/register" class="btn-primary w-full text-center">
+        Comenzar Prueba de 14 Días
+      </a>
+      {% endif %}
+    </div>
+
+    <!-- Business Plan -->
+    <div class="pricing-card">
+      <div class="mb-6">
+        <h3 class="text-xl font-bold mb-2">Empresa</h3>
+        <div class="flex items-baseline gap-2">
+          <span class="price-amount">$29.99</span>
+          <span style="color: var(--text-muted); font-size: .875rem;">/mes</span>
+        </div>
+        <p class="mt-3 text-sm" style="color: var(--text-muted);">
+          Para negocios en crecimiento y equipos
+        </p>
+      </div>
+
+      <div class="mb-6">
+        <div class="feature-item">
+          <div class="check-icon">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <span><strong>Todo ilimitado</strong></span>
+        </div>
+        <div class="feature-item">
+          <div class="check-icon">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <span>Soporte prioritario</span>
+        </div>
+        <div class="feature-item">
+          <div class="check-icon">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <span>Personalización de marca</span>
+        </div>
+        <div class="feature-item">
+          <div class="check-icon">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <span>Acceso a API</span>
+        </div>
+        <div class="feature-item">
+          <div class="check-icon">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <span>Análisis avanzados</span>
+        </div>
+        <div class="feature-item">
+          <div class="check-icon">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <span>Integraciones personalizadas</span>
+        </div>
+      </div>
+
+      {% if user and user.plan_info.subscription.plan == 'business' %}
+      <button class="btn-primary w-full opacity-50 cursor-not-allowed" disabled>
+        Plan Actual
+      </button>
+      {% elif user %}
+      <a href="/subscription/checkout/business" class="btn-primary w-full text-center">
+        Actualizar a Empresa
+      </a>
+      {% else %}
+      <a href="/register" class="btn-primary w-full text-center">
+        Comenzar Prueba de 14 Días
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="card max-w-3xl mx-auto">
+    <h2 class="text-2xl font-bold mb-6">Preguntas Frecuentes</h2>
+
+    <div class="space-y-4">
+      <details class="group">
+        <summary class="cursor-pointer font-semibold text-sm py-2 list-none flex items-center justify-between">
+          <span>¿Puedo cambiar de plan en cualquier momento?</span>
+          <svg class="w-5 h-5 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </summary>
+        <p class="mt-2 text-sm" style="color: var(--text-muted);">
+          Sí, puedes actualizar o degradar tu plan en cualquier momento. Los cambios se aplicarán inmediatamente y se prorratearán en tu próxima factura.
+        </p>
+      </details>
+
+      <details class="group">
+        <summary class="cursor-pointer font-semibold text-sm py-2 list-none flex items-center justify-between">
+          <span>¿Qué métodos de pago aceptan?</span>
+          <svg class="w-5 h-5 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </summary>
+        <p class="mt-2 text-sm" style="color: var(--text-muted);">
+          Aceptamos tarjetas de crédito y débito a través de Stripe, y también Mercado Pago para usuarios en Latinoamérica.
+        </p>
+      </details>
+
+      <details class="group">
+        <summary class="cursor-pointer font-semibold text-sm py-2 list-none flex items-center justify-between">
+          <span>¿Hay período de prueba?</span>
+          <svg class="w-5 h-5 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </summary>
+        <p class="mt-2 text-sm" style="color: var(--text-muted);">
+          Sí, todos los planes de pago incluyen 14 días de prueba gratuita. No se te cobrará hasta que termine el período de prueba.
+        </p>
+      </details>
+
+      <details class="group">
+        <summary class="cursor-pointer font-semibold text-sm py-2 list-none flex items-center justify-between">
+          <span>¿Puedo cancelar en cualquier momento?</span>
+          <svg class="w-5 h-5 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </summary>
+        <p class="mt-2 text-sm" style="color: var(--text-muted);">
+          Por supuesto. Puedes cancelar tu suscripción en cualquier momento desde tu panel de suscripción. Tu plan permanecerá activo hasta el final del período de facturación actual.
+        </p>
+      </details>
+    </div>
+  </div>
+</div>
+{% endblock %}

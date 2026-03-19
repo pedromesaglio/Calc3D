@@ -3,10 +3,37 @@ __pycache__/
 *.pyc
 *.pyo
 .env
+.env.local
+.env.*.local
 *.db
 *.db-wal
 *.db-shm
+*.db-journal
+!railway-data/
 data.json
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+secrets/
+*.pem
+*.key
+
+# Temp
+*.tmp
+*.bak

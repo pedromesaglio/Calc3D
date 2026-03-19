@@ -141,6 +141,64 @@ def init_db(db_path: str | None = None) -> None:
                 currency         TEXT NOT NULL DEFAULT '$',
                 terms_default    TEXT NOT NULL DEFAULT ''
             );
+
+            CREATE TABLE IF NOT EXISTS subscriptions (
+                id                      INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id                 INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+                plan                    TEXT NOT NULL DEFAULT 'free',
+                status                  TEXT NOT NULL DEFAULT 'active',
+                stripe_customer_id      TEXT UNIQUE,
+                stripe_subscription_id  TEXT UNIQUE,
+                mercadopago_customer_id TEXT UNIQUE,
+                mercadopago_subscription_id TEXT UNIQUE,
+                payment_provider        TEXT,
+                started_at              TEXT NOT NULL,
+                current_period_start    TEXT,
+                current_period_end      TEXT,
+                trial_ends_at           TEXT,
+                canceled_at             TEXT,
+                created_at              TEXT NOT NULL,
+                updated_at              TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS usage_limits (
+                id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id             INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+                calculations_used   INTEGER NOT NULL DEFAULT 0,
+                quotes_used         INTEGER NOT NULL DEFAULT 0,
+                clients_used        INTEGER NOT NULL DEFAULT 0,
+                catalog_items_used  INTEGER NOT NULL DEFAULT 0,
+                reset_at            TEXT NOT NULL,
+                created_at          TEXT NOT NULL,
+                updated_at          TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS payments (
+                id                     INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id                INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                amount                 REAL NOT NULL,
+                currency               TEXT NOT NULL DEFAULT 'USD',
+                status                 TEXT NOT NULL,
+                payment_provider       TEXT NOT NULL,
+                provider_payment_id    TEXT UNIQUE,
+                provider_customer_id   TEXT,
+                description            TEXT,
+                metadata               TEXT,
+                created_at             TEXT NOT NULL,
+                updated_at             TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS webhook_events (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                provider        TEXT NOT NULL,
+                event_type      TEXT NOT NULL,
+                event_id        TEXT UNIQUE NOT NULL,
+                payload         TEXT NOT NULL,
+                processed       INTEGER NOT NULL DEFAULT 0,
+                error_message   TEXT,
+                created_at      TEXT NOT NULL,
+                processed_at    TEXT
+            );
         """)
         # Migrations
         for table, col, definition in [
