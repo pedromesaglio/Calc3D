@@ -47,12 +47,11 @@ def create_app(db_path: str | None = None) -> FastAPI:
 
     fastapi_app.state.templates = templates
 
-    # Session middleware (debe ir primero)
-    fastapi_app.add_middleware(
-        SessionMiddleware,
-        secret_key=get_secret_key(db_path),
-        max_age=60 * 60 * 24 * 30,
-    )
+    # IMPORTANTE: Los middlewares se ejecutan en orden INVERSO
+    # El último agregado es el primero en ejecutarse
+
+    # Subscription status middleware (se ejecuta último)
+    fastapi_app.add_middleware(SubscriptionStatusMiddleware)
 
     # Rate limiting middleware (solo en producción)
     if Config.IS_PRODUCTION:
@@ -63,8 +62,12 @@ def create_app(db_path: str | None = None) -> FastAPI:
         )
         logger.info("Rate limiting enabled for production")
 
-    # Subscription status middleware
-    fastapi_app.add_middleware(SubscriptionStatusMiddleware)
+    # Session middleware (debe agregarse último para ejecutarse primero)
+    fastapi_app.add_middleware(
+        SessionMiddleware,
+        secret_key=get_secret_key(db_path),
+        max_age=60 * 60 * 24 * 30,
+    )
 
     # Registrar error handlers
     register_error_handlers(fastapi_app)
