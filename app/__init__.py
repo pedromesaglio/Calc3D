@@ -76,6 +76,6 @@ def create_app(db_path: str | None = None) -> FastAPI:
     for mod in (auth, calculator, catalog, clients, dashboard, filaments, public, quotes, settings, subscriptions):
         fastapi_app.include_router(mod.router)
 
-    logger.info(f"Calc3D initialized successfully (Environment: {Config.ENVIRONMENT})")
+    logger.info(f"Calc3D initialized successfully (Environment: {Config.ENVIRONMENT}, Database: persistent)")
 
     return fastapi_app
