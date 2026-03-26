@@ -5,71 +5,107 @@
 {% block extra_styles %}
 <style>
   .checkout-container {
-    max-width: 600px;
+    max-width: 700px;
     margin: 0 auto;
   }
   .plan-summary {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05));
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.08));
     border: 2px solid #6366f1;
-    border-radius: 1.25rem;
-    padding: 2rem;
-    margin-bottom: 2rem;
+    border-radius: 1.5rem;
+    padding: 2.5rem;
+    margin-bottom: 2.5rem;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(99, 102, 241, 0.15);
+  }
+  .plan-summary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899);
   }
   .price-display {
-    font-size: 3rem;
+    font-size: 3.5rem;
     font-weight: 900;
     line-height: 1;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    background: linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    letter-spacing: -0.02em;
   }
   .payment-method-card {
     background: var(--bg-card);
     border: 2px solid var(--border);
-    border-radius: 1rem;
-    padding: 1.5rem;
+    border-radius: 1.25rem;
+    padding: 1.75rem;
     margin-bottom: 1rem;
     cursor: pointer;
-    transition: all .2s;
+    transition: all .25s cubic-bezier(.4,0,.2,1);
     position: relative;
+    overflow: hidden;
+  }
+  .payment-method-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, #6366f1, #8b5cf6);
+    transform: scaleY(0);
+    transition: transform .25s cubic-bezier(.4,0,.2,1);
   }
   .payment-method-card:hover {
     border-color: #6366f1;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgb(0 0 0 / .1);
+    transform: translateX(4px);
+    box-shadow: 0 12px 24px rgba(99, 102, 241, 0.15);
+  }
+  .payment-method-card:hover::before {
+    transform: scaleY(1);
   }
   .payment-method-card input[type="radio"] {
     position: absolute;
     opacity: 0;
-  }
-  .payment-method-card input[type="radio"]:checked + .payment-content {
-    border-left: 4px solid #6366f1;
-    padding-left: 1.5rem;
+    pointer-events: none;
   }
   .payment-method-card:has(input:checked) {
-    background: rgba(99, 102, 241, 0.08);
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(139, 92, 246, 0.08));
     border-color: #6366f1;
+    border-width: 3px;
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
+  }
+  .payment-method-card:has(input:checked)::before {
+    transform: scaleY(1);
   }
   .payment-content {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 1.25rem;
     transition: all .2s;
   }
   .payment-icon {
-    width: 3rem;
-    height: 3rem;
-    padding: 0.75rem;
+    width: 3.5rem;
+    height: 3.5rem;
+    padding: 0.875rem;
     background: linear-gradient(135deg, #6366f1, #8b5cf6);
     color: white;
-    border-radius: 0.75rem;
+    border-radius: 1rem;
     flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    transition: transform .2s;
+  }
+  .payment-method-card:hover .payment-icon {
+    transform: scale(1.05);
   }
   .payment-details h3 {
-    font-size: 1.125rem;
+    font-size: 1.25rem;
     font-weight: 700;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.375rem;
+    color: var(--text);
   }
   .payment-details p {
     font-size: 0.875rem;
@@ -79,14 +115,94 @@
   .feature-badge {
     display: inline-flex;
     align-items: center;
+    gap: 0.625rem;
+    padding: 0.75rem 1.25rem;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.1));
+    border: 1.5px solid rgba(16, 185, 129, 0.4);
+    border-radius: 0.75rem;
+    font-size: 0.9375rem;
+    color: #059669;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+  }
+  .info-card {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.03), rgba(139, 92, 246, 0.03));
+    border: 1.5px solid rgba(99, 102, 241, 0.2);
+    border-radius: 1.25rem;
+    padding: 1.75rem;
+  }
+  .info-card h4 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--text);
+  }
+  .info-card ul li {
+    padding: 0.5rem 0;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+  }
+  .back-link {
+    display: inline-flex;
+    align-items: center;
     gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: rgba(16, 185, 129, 0.1);
-    border: 1px solid rgba(16, 185, 129, 0.3);
-    border-radius: 0.5rem;
-    font-size: 0.875rem;
-    color: #10b981;
+    color: #6366f1;
     font-weight: 600;
+    font-size: 0.9375rem;
+    transition: all .2s;
+  }
+  .back-link:hover {
+    gap: 0.75rem;
+    color: #4f46e5;
+  }
+  .submit-button {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border: none;
+    padding: 1.125rem 2rem;
+    font-size: 1.125rem;
+    font-weight: 700;
+    border-radius: 1rem;
+    color: white;
+    cursor: pointer;
+    transition: all .3s cubic-bezier(.4,0,.2,1);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    width: 100%;
+  }
+  .submit-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(99, 102, 241, 0.4);
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  }
+  .submit-button:active {
+    transform: translateY(0);
+  }
+  .radio-indicator {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #d1d5db;
+    border-radius: 50%;
+    margin-left: auto;
+    position: relative;
+    transition: all .2s;
+  }
+  .payment-method-card:has(input:checked) .radio-indicator {
+    border-color: #6366f1;
+    border-width: 2px;
+  }
+  .payment-method-card:has(input:checked) .radio-indicator::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 12px;
+    height: 12px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border-radius: 50%;
   }
 </style>
 {% endblock %}
@@ -94,15 +210,17 @@
 {% block content %}
 <div class="checkout-container">
   <!-- Header -->
-  <div class="mb-8">
-    <a href="/pricing" class="text-sm text-indigo-600 hover:text-indigo-700 flex items-center gap-1 mb-4">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+  <div class="mb-10">
+    <a href="/pricing" class="back-link mb-6 inline-flex">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
       </svg>
       Volver a planes
     </a>
-    <h1 class="text-3xl font-extrabold mb-2">Completa tu suscripción</h1>
-    <p class="text-muted">Selecciona tu método de pago preferido</p>
+    <h1 class="text-4xl font-extrabold mb-3" style="background: linear-gradient(135deg, #1e293b, #334155); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+      Completa tu suscripción
+    </h1>
+    <p class="text-muted text-lg">Selecciona tu método de pago preferido</p>
   </div>
 
   <!-- Plan Summary -->
@@ -157,14 +275,15 @@
       <input type="radio" name="provider" value="stripe" checked required>
       <div class="payment-content">
         <div class="payment-icon">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
           </svg>
         </div>
-        <div class="payment-details">
+        <div class="payment-details" style="flex: 1;">
           <h3>Tarjeta de Crédito / Débito</h3>
           <p>Pago seguro procesado por Stripe</p>
         </div>
+        <div class="radio-indicator"></div>
       </div>
     </label>
     {% endif %}
@@ -178,10 +297,11 @@
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/>
           </svg>
         </div>
-        <div class="payment-details">
+        <div class="payment-details" style="flex: 1;">
           <h3>Mercado Pago</h3>
           <p>Múltiples opciones de pago disponibles</p>
         </div>
+        <div class="radio-indicator"></div>
       </div>
     </label>
     {% endif %}
@@ -189,14 +309,14 @@
     {% endif %}
 
     <!-- Info Section -->
-    <div class="card mt-6 mb-6">
-      <div class="flex gap-3">
-        <svg class="w-6 h-6 text-indigo-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    <div class="info-card mt-8 mb-8">
+      <div class="flex gap-4">
+        <svg class="w-7 h-7 text-indigo-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
         </svg>
         <div>
-          <h4 class="font-semibold mb-2">¿Qué sucede después?</h4>
-          <ul class="text-sm text-muted space-y-1">
+          <h4>¿Qué sucede después?</h4>
+          <ul class="text-muted space-y-2">
             <li>• Serás redirigido a la plataforma de pago segura</li>
             <li>• Completa tus datos de pago</li>
             <li>• Disfruta de 14 días de prueba gratuita</li>
@@ -209,15 +329,15 @@
 
     <!-- Submit Button -->
     {% if stripe_configured or mercadopago_configured %}
-    <button type="submit" class="btn-primary w-full text-lg py-3">
-      Continuar al pago
-      <svg class="w-5 h-5 ml-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+    <button type="submit" class="submit-button">
+      <span>Continuar al pago</span>
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
       </svg>
     </button>
 
-    <p class="text-center text-sm text-muted mt-4">
-      Al continuar, aceptas nuestros términos de servicio y política de privacidad
+    <p class="text-center text-sm text-muted mt-6" style="font-size: 0.875rem;">
+      Al continuar, aceptas nuestros <a href="#" class="text-indigo-600 hover:text-indigo-700 font-semibold">términos de servicio</a> y <a href="#" class="text-indigo-600 hover:text-indigo-700 font-semibold">política de privacidad</a>
     </p>
     {% else %}
     <a href="/pricing" class="btn-secondary w-full text-lg py-3 text-center">
