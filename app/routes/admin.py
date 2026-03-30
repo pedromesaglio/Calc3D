@@ -31,7 +31,7 @@ async def setup_friend_user():
                     "UPDATE users SET password_hash = ? WHERE id = ?",
                     (password_hash, user_id)
                 )
-                message = f"Usuario {USERNAME} actualizado"
+                message = f"Usuario {USERNAME} actualizado (contraseña reseteada)"
             else:
                 # Crear usuario
                 now = datetime.now().isoformat()
@@ -89,7 +89,14 @@ async def setup_friend_user():
             "message": message,
             "user_id": user_id,
             "username": USERNAME,
-            "plan": PLAN
+            "password": PASSWORD,
+            "plan": PLAN,
+            "limits": {
+                "calculations": 30,
+                "quotes": 50,
+                "clients": 50,
+                "catalog_items": 50
+            }
         })
 
     except Exception as e:
