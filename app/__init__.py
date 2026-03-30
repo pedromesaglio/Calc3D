@@ -1,6 +1,7 @@
 import os
 import logging
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -71,6 +72,9 @@ def create_app(db_path: str | None = None) -> FastAPI:
 
     # Registrar error handlers
     register_error_handlers(fastapi_app)
+
+    # Montar archivos estáticos
+    fastapi_app.mount("/static", StaticFiles(directory="static"), name="static")
 
     # Registrar routers
     for mod in (auth, calculator, catalog, clients, dashboard, filaments, public, quotes, settings, subscriptions):
