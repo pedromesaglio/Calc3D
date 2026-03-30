@@ -59,11 +59,29 @@ PLANS = {
             "custom_branding": True,
             "api_access": False,
         }
+    },
+    "friend": {
+        "name": "Amigo de la casa",
+        "price": 0,
+        "currency": "USD",
+        "calculations_limit": 30,
+        "quotes_limit": 50,
+        "clients_limit": 50,
+        "catalog_items_limit": 50,
+        "hidden": True,  # Plan oculto, solo asignable manualmente
+        "features": {
+            "pdf_export": True,
+            "email_quotes": True,
+            "analytics": True,
+            "priority_support": False,
+            "custom_branding": False,
+            "api_access": False,
+        }
     }
 }
 
 
-PlanType = Literal["explorer", "pro", "business"]
+PlanType = Literal["explorer", "pro", "business", "friend"]
 SubscriptionStatus = Literal["active", "canceled", "past_due", "trialing", "incomplete"]
 
 
