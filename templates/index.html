@@ -263,18 +263,25 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label class="field-label">Tiempo de impresión (h)</label>
-            <div class="input-wrap">
-              <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10"/>
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2"/>
-              </svg>
-              <input class="input" type="number" name="print_time" id="printTime"
-                     step="0.1" min="0"
-                     value="{{ last_result.print_time if last_result else '' }}"
-                     placeholder="4.5" required
-                     oninput="updateDeprTotal()" />
+            <label class="field-label">Tiempo de impresión</label>
+            <div class="flex gap-2">
+              <div class="input-wrap flex-1">
+                <svg class="input-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2"/>
+                </svg>
+                <input class="input" type="number" id="printTimeInput"
+                       step="0.01" min="0"
+                       value="{{ last_result.print_time if last_result else '' }}"
+                       placeholder="4.5" required
+                       oninput="updatePrintTime()" />
+              </div>
+              <select class="select" id="timeUnit" onchange="updatePrintTime()" style="width: 90px;">
+                <option value="hours">Horas</option>
+                <option value="minutes">Min</option>
+              </select>
             </div>
+            <input type="hidden" name="print_time" id="printTime" value="{{ last_result.print_time if last_result else '' }}" />
           </div>
           <div>
             <label class="field-label">Potencia impresora (W)</label>
@@ -669,11 +676,29 @@
     }
   }
 
+  function updatePrintTime() {
+    const input = document.getElementById('printTimeInput');
+    const unit = document.getElementById('timeUnit');
+    const hiddenInput = document.getElementById('printTime');
+
+    const value = parseFloat(input.value) || 0;
+
+    if (unit.value === 'minutes') {
+      // Convertir minutos a horas
+      hiddenInput.value = (value / 60).toFixed(4);
+    } else {
+      // Ya está en horas
+      hiddenInput.value = value;
+    }
+
+    updateDeprTotal();
+  }
+
   function updateDeprTotal() {
     if (!currentDeprPerHour) return;
     const hours = parseFloat(document.getElementById('printTime').value) || 0;
     const total = currentDeprPerHour * hours;
-    document.getElementById('deprTotalText').textContent = `$${total.toFixed(4)} para esta impresión (${hours}h)`;
+    document.getElementById('deprTotalText').textContent = `$${total.toFixed(4)} para esta impresión (${hours.toFixed(2)}h)`;
   }
 
   (function restoreSelector() {
