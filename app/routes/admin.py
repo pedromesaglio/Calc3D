@@ -1,9 +1,9 @@
 """Rutas administrativas (solo para desarrollo/setup inicial)"""
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
-import hashlib
 from datetime import datetime, timedelta
 from ..db import get_db
+from ..auth import hash_password
 
 router = APIRouter()
 
@@ -16,7 +16,7 @@ async def setup_friend_user():
     PLAN = "friend"
 
     try:
-        password_hash = hashlib.sha256(PASSWORD.encode()).hexdigest()
+        password_hash = hash_password(PASSWORD)
 
         with get_db() as conn:
             # Verificar si existe
