@@ -57,7 +57,7 @@ PLANS = {
             "analytics": True,
             "priority_support": True,
             "custom_branding": True,
-            "api_access": True,
+            "api_access": False,
         }
     }
 }
