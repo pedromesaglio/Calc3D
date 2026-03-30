@@ -229,8 +229,8 @@ class SubscriptionStatusMiddleware(BaseHTTPMiddleware):
             logger.error(f"Error getting subscription for user {user_id}: {e}")
             return await call_next(request)
 
-        # Plan gratuito siempre tiene acceso
-        if subscription["plan"] == "free":
+        # Plan gratuito (explorer) siempre tiene acceso
+        if subscription["plan"] == "explorer":
             return await call_next(request)
 
         # Verificar si la suscripción tiene problemas

@@ -8,6 +8,7 @@ from ..auth import get_current_user
 from ..csrf import csrf_protect
 from ..db import get_db, rows_as_dicts
 from ..services import build_chart_data
+from ..middleware import check_usage_limit, track_usage
 
 router = APIRouter()
 
@@ -90,6 +91,11 @@ async def calculate(
     if not user:
         return RedirectResponse("/login", status_code=303)
 
+    # Verificar límite de cálculos
+    limit_check = await check_usage_limit(request, "calculations", redirect_to_pricing=True)
+    if limit_check:
+        return limit_check
+
     multiplier = (
         custom_multiplier
         if multiplier_preset == "custom" and custom_multiplier
@@ -141,6 +147,9 @@ async def calculate(
             ),
         )
         new_id = cursor.lastrowid
+
+    # Incrementar contador de uso
+    track_usage(user["id"], "calculations")
 
     last_result = {
         "id": new_id,
