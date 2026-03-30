@@ -8,7 +8,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from .csrf import csrf_input
 from .db import get_secret_key, init_db
 from .services import days_since
-from .routes import auth, calculator, catalog, clients, dashboard, filaments, public, quotes, settings, subscriptions
+from .routes import admin, auth, calculator, catalog, clients, dashboard, filaments, public, quotes, settings, subscriptions
 from .middleware import RateLimitMiddleware, SubscriptionStatusMiddleware
 from .error_handlers import register_error_handlers
 from .config import Config
@@ -77,7 +77,7 @@ def create_app(db_path: str | None = None) -> FastAPI:
     fastapi_app.mount("/static", StaticFiles(directory="static"), name="static")
 
     # Registrar routers
-    for mod in (auth, calculator, catalog, clients, dashboard, filaments, public, quotes, settings, subscriptions):
+    for mod in (admin, auth, calculator, catalog, clients, dashboard, filaments, public, quotes, settings, subscriptions):
         fastapi_app.include_router(mod.router)
 
     logger.info(f"Calc3D initialized successfully (Environment: {Config.ENVIRONMENT}, Database: persistent)")
