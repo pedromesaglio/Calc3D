@@ -101,16 +101,16 @@
 
   <!-- Plans Grid -->
   <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-    <!-- Free Plan -->
+    <!-- Explorer Plan -->
     <div class="pricing-card">
       <div class="mb-6">
-        <h3 class="text-xl font-bold mb-2">Gratuito</h3>
+        <h3 class="text-xl font-bold mb-2">Explorador</h3>
         <div class="flex items-baseline gap-2">
           <span class="price-amount">$0</span>
           <span style="color: var(--text-muted); font-size: .875rem;">/mes</span>
         </div>
         <p class="mt-3 text-sm" style="color: var(--text-muted);">
-          Perfecto para comenzar y probar la plataforma
+          Para descubrir la plataforma sin pagar nada. Sin tarjeta de crédito.
         </p>
       </div>
 
@@ -121,7 +121,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
             </svg>
           </div>
-          <span><strong>20</strong> cálculos por mes</span>
+          <span>Calculá tus primeras piezas <strong>5 / mes</strong></span>
         </div>
         <div class="feature-item">
           <div class="check-icon">
@@ -129,7 +129,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
             </svg>
           </div>
-          <span><strong>5</strong> presupuestos</span>
+          <span>Presupuestos <strong>5 / mes</strong></span>
         </div>
         <div class="feature-item">
           <div class="check-icon">
@@ -137,7 +137,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
             </svg>
           </div>
-          <span><strong>5</strong> clientes</span>
+          <span>Clientes <strong>5</strong></span>
         </div>
         <div class="feature-item">
           <div class="check-icon">
@@ -145,11 +145,11 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
             </svg>
           </div>
-          <span><strong>10</strong> piezas en catálogo</span>
+          <span>Piezas en catálogo <strong>10</strong></span>
         </div>
       </div>
 
-      {% if user and user.plan_info.subscription.plan == 'free' %}
+      {% if user and user.plan_info.subscription.plan == 'explorer' %}
       <button class="btn-primary w-full opacity-50 cursor-not-allowed" disabled>
         Plan Actual
       </button>
@@ -173,7 +173,7 @@
           <span style="color: var(--text-muted); font-size: .875rem;">/mes</span>
         </div>
         <p class="mt-3 text-sm" style="color: var(--text-muted);">
-          Ideal para profesionales y pequeños negocios
+          Para el que vende en serio. Más que suficiente para un vendedor activo.
         </p>
       </div>
 
@@ -184,7 +184,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
             </svg>
           </div>
-          <span><strong>Cálculos ilimitados</strong></span>
+          <span>Calculá tus trabajos <strong>50 / mes</strong></span>
         </div>
         <div class="feature-item">
           <div class="check-icon">
@@ -192,7 +192,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
             </svg>
           </div>
-          <span><strong>100</strong> presupuestos</span>
+          <span>Presupuestos profesionales <strong>100 / mes</strong></span>
         </div>
         <div class="feature-item">
           <div class="check-icon">
@@ -200,7 +200,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
             </svg>
           </div>
-          <span><strong>50</strong> clientes</span>
+          <span>Clientes <strong>50</strong></span>
         </div>
         <div class="feature-item">
           <div class="check-icon">
@@ -208,7 +208,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
             </svg>
           </div>
-          <span><strong>100</strong> piezas en catálogo</span>
+          <span>Piezas en catálogo <strong>100</strong></span>
         </div>
         <div class="feature-item">
           <div class="check-icon">
@@ -216,7 +216,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
             </svg>
           </div>
-          <span>Exportación a PDF</span>
+          <span>PDFs con tu marca listos para enviar</span>
         </div>
         <div class="feature-item">
           <div class="check-icon">
@@ -224,7 +224,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
             </svg>
           </div>
-          <span>Envío de presupuestos por email</span>
+          <span>Presupuestos directo al cliente por email</span>
         </div>
         <div class="feature-item">
           <div class="check-icon">
@@ -232,7 +232,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
             </svg>
           </div>
-          <span>Análisis y estadísticas</span>
+          <span>Estadísticas de ganancia por trabajo</span>
         </div>
       </div>
 
@@ -260,7 +260,7 @@
           <span style="color: var(--text-muted); font-size: .875rem;">/mes</span>
         </div>
         <p class="mt-3 text-sm" style="color: var(--text-muted);">
-          Para negocios en crecimiento y equipos
+          Para talleres en crecimiento. Gestioná todo tu negocio desde un solo lugar.
         </p>
       </div>
 
@@ -271,7 +271,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
             </svg>
           </div>
-          <span><strong>Todo ilimitado</strong></span>
+          <span>Todo lo del plan Pro</span>
         </div>
         <div class="feature-item">
           <div class="check-icon">
@@ -279,7 +279,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
             </svg>
           </div>
-          <span>Soporte prioritario</span>
+          <span>Hasta <strong>5 usuarios</strong> en tu equipo</span>
         </div>
         <div class="feature-item">
           <div class="check-icon">
@@ -287,7 +287,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
             </svg>
           </div>
-          <span>Personalización de marca</span>
+          <span>Tu logo y colores en todos los PDFs</span>
         </div>
         <div class="feature-item">
           <div class="check-icon">
@@ -295,7 +295,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
             </svg>
           </div>
-          <span>Acceso a API</span>
+          <span>Reportes avanzados por cliente y filamento</span>
         </div>
         <div class="feature-item">
           <div class="check-icon">
@@ -303,7 +303,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
             </svg>
           </div>
-          <span>Análisis avanzados</span>
+          <span>Acceso a API para integraciones</span>
         </div>
         <div class="feature-item">
           <div class="check-icon">
@@ -311,7 +311,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
             </svg>
           </div>
-          <span>Integraciones personalizadas</span>
+          <span>Soporte prioritario — respuesta en 24hs</span>
         </div>
       </div>
 

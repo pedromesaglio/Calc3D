@@ -9,11 +9,11 @@ from .config import Config
 
 # Definición de planes y sus límites
 PLANS = {
-    "free": {
-        "name": "Gratuito",
+    "explorer": {
+        "name": "Explorador",
         "price": 0,
         "currency": "USD",
-        "calculations_limit": 20,
+        "calculations_limit": 5,
         "quotes_limit": 5,
         "clients_limit": 5,
         "catalog_items_limit": 10,
@@ -30,7 +30,7 @@ PLANS = {
         "name": "Profesional",
         "price": 9.99,
         "currency": "USD",
-        "calculations_limit": -1,  # -1 significa ilimitado
+        "calculations_limit": 50,
         "quotes_limit": 100,
         "clients_limit": 50,
         "catalog_items_limit": 100,
@@ -63,7 +63,7 @@ PLANS = {
 }
 
 
-PlanType = Literal["free", "pro", "business"]
+PlanType = Literal["explorer", "pro", "business"]
 SubscriptionStatus = Literal["active", "canceled", "past_due", "trialing", "incomplete"]
 
 
@@ -77,12 +77,12 @@ def get_or_create_subscription(user_id: int, db_path: str | None = None) -> dict
         if row:
             return dict(row)
 
-        # Crear suscripción gratuita por defecto
+        # Crear suscripción gratuita por defecto (plan Explorador)
         now = datetime.now().isoformat()
         conn.execute("""
             INSERT INTO subscriptions
             (user_id, plan, status, started_at, created_at, updated_at)
-            VALUES (?, 'free', 'active', ?, ?, ?)
+            VALUES (?, 'explorer', 'active', ?, ?, ?)
         """, (user_id, now, now, now))
 
         # Crear límites de uso
@@ -175,7 +175,7 @@ def check_limit(
     """
     subscription = get_or_create_subscription(user_id, db_path)
     usage = get_usage_limits(user_id, db_path)
-    plan = PLANS.get(subscription["plan"], PLANS["free"])
+    plan = PLANS.get(subscription["plan"], PLANS["explorer"])
 
     limit_key = f"{resource_type}_limit"
     used_key = f"{resource_type}_used"
@@ -215,7 +215,7 @@ def get_user_plan_info(user_id: int, db_path: str | None = None) -> dict:
     """Obtiene información completa del plan del usuario"""
     subscription = get_or_create_subscription(user_id, db_path)
     usage = get_usage_limits(user_id, db_path)
-    plan = PLANS.get(subscription["plan"], PLANS["free"])
+    plan = PLANS.get(subscription["plan"], PLANS["explorer"])
 
     # Calcular porcentajes de uso
     usage_percentages = {}
@@ -273,7 +273,7 @@ def update_subscription(
 
     # Si es la primera vez que activa un plan de pago
     subscription = get_or_create_subscription(user_id, db_path)
-    if subscription["plan"] == "free" and plan != "free":
+    if subscription["plan"] == "explorer" and plan != "explorer":
         updates["started_at"] = now
         updates["current_period_start"] = now
         updates["current_period_end"] = (
@@ -307,7 +307,7 @@ def cancel_subscription(user_id: int, db_path: str | None = None) -> None:
 def has_feature(user_id: int, feature: str, db_path: str | None = None) -> bool:
     """Verifica si el usuario tiene acceso a una característica específica"""
     subscription = get_or_create_subscription(user_id, db_path)
-    plan = PLANS.get(subscription["plan"], PLANS["free"])
+    plan = PLANS.get(subscription["plan"], PLANS["explorer"])
 
     if subscription["status"] != "active":
         return False
