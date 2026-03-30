@@ -1,7 +1,15 @@
+import os
 import sqlite3
 from pathlib import Path
 
-DB_FILE: Path = Path("calc3d.db")
+# En producción (Railway), usar volumen persistente
+# En desarrollo, usar directorio actual
+if os.getenv("RAILWAY_ENVIRONMENT"):
+    DB_DIR = Path("/data")
+    DB_DIR.mkdir(parents=True, exist_ok=True)
+    DB_FILE: Path = DB_DIR / "calc3d.db"
+else:
+    DB_FILE: Path = Path("calc3d.db")
 
 
 def get_db(db_path: str | None = None) -> sqlite3.Connection:
