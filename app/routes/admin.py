@@ -11,7 +11,7 @@ router = APIRouter()
 @router.post("/admin/setup-friend-user")
 async def setup_friend_user():
     """Crea el usuario 'Amigo de la casa' - Solo usar una vez"""
-    USERNAME = "Juangatti48"
+    USERNAME = "juangatti48"
     PASSWORD = "Losgatti10"
     PLAN = "friend"
 
